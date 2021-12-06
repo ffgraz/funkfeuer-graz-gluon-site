@@ -19,9 +19,9 @@ echo "Cleaning..."
 
 rm -rf output
 
-for target in $(make list-targets); do
-  make "GLUON_TARGET=$target" clean
-done
+# for target in $(make list-targets); do
+#   make "GLUON_TARGET=$target" clean
+# done
 
 for target in $(make list-targets); do
   echo "Building $target..."
