@@ -6,4 +6,4 @@ yes "
 SRC=$(readlink -f ..)
 lxc exec gluon apt update
 yes | lxc exec gluon apt install build-essential python2 libncurses-dev unzip make
-lxc config device add gluon src disk "target=$SRC" "path=$SRC"
+lxc config device add gluon src disk "source=$SRC" "path=$SRC"
