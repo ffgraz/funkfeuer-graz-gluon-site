@@ -5,5 +5,5 @@ yes "
 " | lxc exec gluon adduser "$USER"
 SRC=$(readlink -f ..)
 lxc exec gluon apt update
-lxc exec gluon apt install build-essential python2 libncurses-dev unzip -y
-lxc config device add gluon src "target=$SRC" "path=$SRC"
+yes | lxc exec gluon apt install build-essential python2 libncurses-dev unzip make
+lxc config device add gluon src disk "target=$SRC" "path=$SRC"
