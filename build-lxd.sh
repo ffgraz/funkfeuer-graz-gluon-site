@@ -1,7 +1,6 @@
 #!/bin/bash
 
 lxc launch images:debian/12 -c security.privileged=true gluon
-lxc disk add 
 yes "
 " | lxc exec gluon adduser "$USER"
 SRC=$(readlink -f ..)
