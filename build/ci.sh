@@ -25,7 +25,7 @@ done
 
 for target in $(make list-targets); do
   echo "Building $target..."
-  make "GLUON_TARGET=$target" compile "-j$cores" "${PARAMS[@]}"
+  make "GLUON_TARGET=$target" "-j$cores" "${PARAMS[@]}"
 done
 
 make manifest "${PARAMS[@]}"
