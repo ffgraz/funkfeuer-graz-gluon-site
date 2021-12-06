@@ -15,7 +15,7 @@ done
 
 echo "cd $SELF/../.."
 
-cat "$SELF/ci.sh") | lxc exec gluon su "$(id -un)" -c "bash -"
+cat "$SELF/ci.sh") | lxc exec gluon -- su "$(id -un)" -c "bash -"
 
 rm -rf /storage/ffgraz/www/$FF_CHANNEL
 mv output /storage/ffgraz/www/$FF_CHANNEL
