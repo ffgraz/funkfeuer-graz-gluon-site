@@ -17,5 +17,5 @@ echo "cd $SELF/../.."
 
 cat "$SELF/ci.sh") | lxc exec gluon bash -
 
-rm -rf /var/www/ffgraz/$FF_CHANNEL
-mv output /var/www/ffgraz/$FF_CHANNEL
+rm -rf /storage/ffgraz/www/$FF_CHANNEL
+mv output /storage/ffgraz/www/$FF_CHANNEL
