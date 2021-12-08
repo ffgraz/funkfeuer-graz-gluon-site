@@ -12,6 +12,8 @@ GLUON_FEATURES := \
 	status-page \
 	web-advanced \
 	web-wizard \
+	web-private-wifi \
+	web-logging \
 	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn
 
@@ -29,7 +31,7 @@ GLUON_SITE_PACKAGES := iwinfo mtr
 #			opkg compare-versions "$1" '>>' "$2"
 #		to decide if a version is newer or not.
 
-DEFAULT_GLUON_RELEASE := 0.6+exp$(shell date '+%Y%m%d')
+DEFAULT_GLUON_RELEASE := 0.0+exp$(shell date '+%Y%m%d')
 
 # Variables set with ?= can be overwritten from the command line
 
