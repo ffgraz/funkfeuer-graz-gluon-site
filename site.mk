@@ -12,7 +12,8 @@ GLUON_FEATURES := \
 	status-page \
 	web-advanced \
 	web-wizard \
-	config-mode-theme-funkfeuer
+	config-mode-theme-funkfeuer \
+	mesh-vpn-openvpn
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
