@@ -17,5 +17,9 @@ echo "cd $SELF/../.."
 
 cat "$SELF/ci.sh") | lxc exec gluon -- su "$(id -un)" -s /bin/bash -c "bash -"
 
+if [ ! -v FF_experimental ]; then
+  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/experimental.manifest
+fi
+
 rm -rf /storage/ffgraz/www/$FF_CHANNEL
 mv output /storage/ffgraz/www/$FF_CHANNEL
