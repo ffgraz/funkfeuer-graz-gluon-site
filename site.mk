@@ -12,12 +12,14 @@ GLUON_FEATURES := \
 	status-page \
 	web-advanced \
 	web-wizard \
+	web-admin \
 	web-private-wifi \
 	web-logging \
 	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn \
 	static-ip \
-	config-mode-manman-sync
+	config-mode-manman-sync \
+	authorized-keys
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
