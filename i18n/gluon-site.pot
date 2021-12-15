@@ -33,3 +33,9 @@ msgstr ""
 
 msgid "gluon-config-mode:contact-note"
 msgstr ""
+
+msgid "gluon-config-mode:manman"
+msgstr ""
+
+msgid "gluon-config-mode:no-manman"
+msgstr ""
