@@ -15,7 +15,9 @@ GLUON_FEATURES := \
 	web-private-wifi \
 	web-logging \
 	config-mode-theme-funkfeuer \
-	mesh-vpn-openvpn
+	mesh-vpn-openvpn \
+	static-ip \
+	config-mode-manman-sync
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
