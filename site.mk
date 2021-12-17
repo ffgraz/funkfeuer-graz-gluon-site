@@ -19,7 +19,8 @@ GLUON_FEATURES := \
 	mesh-vpn-openvpn \
 	static-ip \
 	config-mode-manman-sync \
-	authorized-keys
+	authorized-keys \
+	config-mode-core
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
@@ -27,7 +28,7 @@ GLUON_FEATURES := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr
+GLUON_SITE_PACKAGES := iwinfo mtr iperf3 -batman-adv
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
