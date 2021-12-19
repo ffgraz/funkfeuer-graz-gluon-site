@@ -20,7 +20,8 @@ GLUON_FEATURES := \
 	static-ip \
 	config-mode-manman-sync \
 	authorized-keys \
-	config-mode-core
+	config-mode-core \
+	web-static-ip
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
