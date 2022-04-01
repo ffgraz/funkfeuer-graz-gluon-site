@@ -19,6 +19,7 @@ GLUON_FEATURES := \
 	mesh-vpn-openvpn \
 	static-ip \
 	config-mode-manman-sync \
+	mesh-olsr12-openvpn \
 	authorized-keys \
 	config-mode-core \
 	web-static-ip
