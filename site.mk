@@ -14,6 +14,7 @@ GLUON_FEATURES := \
 	web-wizard \
 	web-admin \
 	web-private-wifi \
+	web-private-ap \
 	web-logging \
 	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn \
