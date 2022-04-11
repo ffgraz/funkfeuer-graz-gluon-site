@@ -31,8 +31,9 @@ GLUON_FEATURES := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump
+#  ddhcpd ddhcpd-olsrd socat
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv ddhcpd tcpdump
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
 #		gluon relies on
