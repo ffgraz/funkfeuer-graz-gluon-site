@@ -18,6 +18,7 @@ GLUON_FEATURES := \
 	web-logging \
 	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn \
+	web-mesh-vpn-openvpn \
 	static-ip \
 	config-mode-manman-sync \
 	mesh-olsr12-openvpn \
