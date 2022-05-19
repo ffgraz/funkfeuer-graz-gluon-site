@@ -32,7 +32,7 @@ GLUON_FEATURES := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump ddhcpd
 #  ddhcpd ddhcpd-olsrd socat
 
 ##	DEFAULT_GLUON_RELEASE
