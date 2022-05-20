@@ -21,7 +21,6 @@ GLUON_FEATURES := \
 	web-mesh-vpn-openvpn \
 	static-ip \
 	config-mode-manman-sync \
-	mesh-olsr12-openvpn \
 	authorized-keys \
 	config-mode-core \
 	web-static-ip
@@ -32,7 +31,7 @@ GLUON_FEATURES := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump ffgraz-ddhcpd-nextnode
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn
 #  ddhcpd ddhcpd-olsrd socat
 
 ##	DEFAULT_GLUON_RELEASE
