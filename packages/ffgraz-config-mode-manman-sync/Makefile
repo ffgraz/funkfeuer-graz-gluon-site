@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=gluon-config-mode-manman-sync
+PKG_NAME:=ffgraz-config-mode-manman-sync
 PKG_VERSION:=2
 
-include ../gluon.mk
+include $(TOPDIR)/../package/gluon.mk
 
-define Package/gluon-config-mode-manman-sync
+define Package/ffgraz-config-mode-manman-sync
   TITLE:=Sync location data from manman
   DEPENDS:=+gluon-config-mode-core +gluon-manman-sync
 endef
 
-$(eval $(call BuildPackageGluon,gluon-config-mode-manman-sync))
+$(eval $(call BuildPackageGluon,ffgraz-config-mode-manman-sync))
