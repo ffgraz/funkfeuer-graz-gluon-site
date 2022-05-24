@@ -1,0 +1,5 @@
+GLUON_SITE_FEEDS='site'
+PACKAGES_SITE_REPO=$(readlink -f site/.git)
+PACKAGES_SITE_COMMIT=$(git -C site/ rev-parse HEAD)
+PACKAGES_SITE_BRANCH=$(git -C site/ rev-parse --abbrev-ref HEAD)
+
