@@ -4,7 +4,7 @@ local uci = require('simple-uci').cursor()
 local ip = require 'luci.ip' -- luci-lib-ip
 local fetch = require 'luci.httpclient'
 local json = require 'luci.jsonc'
-local ecdsa = require 'gluon.ecdsa'
+local ecdsa = require 'ecdsa'
 local site = require 'gluon.site'
 
 local pretty_hostname = require 'pretty_hostname'

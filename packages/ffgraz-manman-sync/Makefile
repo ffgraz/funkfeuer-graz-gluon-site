@@ -6,7 +6,7 @@ PKG_VERSION:=1
 include $(TOPDIR)/../package/gluon.mk
 
 define Package/ffgraz-manman-sync
-  DEPENDS:=+gluon-core +micrond +luci-lib-ip +luci-lib-httpclient +gluon-lib-ecdsa
+  DEPENDS:=+gluon-core +micrond +luci-lib-ip +luci-lib-httpclient +lua-ecdsa
   TITLE:=Sync configuration with data from manman
 endef
 
