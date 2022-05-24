@@ -19,9 +19,8 @@ GLUON_FEATURES := \
 	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn \
 	web-mesh-vpn-openvpn \
-	config-mode-manman-sync \
 	authorized-keys \
-	config-mode-core \
+	config-mode-core
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
@@ -31,7 +30,8 @@ GLUON_FEATURES := \
 
 GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
   ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn \
-  ffgraz-static-ip ffgraz-web-static-ip
+  ffgraz-static-ip ffgraz-web-static-ip \
+  ffgraz-manman-sync ffgraz-config-mode-manman-sync
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
