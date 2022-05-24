@@ -7,7 +7,7 @@ include $(TOPDIR)/../package/gluon.mk
 
 define Package/ffgraz-config-mode-manman-sync
   TITLE:=Sync location data from manman
-  DEPENDS:=+gluon-config-mode-core +gluon-manman-sync
+  DEPENDS:=+gluon-config-mode-core +ffgraz-manman-sync
 endef
 
 $(eval $(call BuildPackageGluon,ffgraz-config-mode-manman-sync))
