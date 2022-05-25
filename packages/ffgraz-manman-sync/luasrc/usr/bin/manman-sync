@@ -165,6 +165,18 @@ local function fetch_signed_json(remote, url)
 		return 1
 	end
 
+	local tsi = tonumber(ts)
+	local now = os.time()
+
+	if now - tsi > 5  * 60 then
+		print('E: response is too old')
+		return 1
+	end
+
+	if tsi > now then
+		print('W: our clock is behind %s seconds', tsi - now)
+	end
+
 	local data = ts .. '@' .. result
 	if not ecdsa.verify(data, sig, mankey) then
 		print('E: signature invalid or not signed with expected key')
