@@ -21,5 +21,9 @@ if [ -v FF_experimental ]; then
   contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/experimental.manifest
 fi
 
+if [ -v FF_upstream ]; then
+  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/upstream.manifest
+fi
+
 rm -rf /storage/ffgraz/www/$FF_CHANNEL
 mv output /storage/ffgraz/www/$FF_CHANNEL
