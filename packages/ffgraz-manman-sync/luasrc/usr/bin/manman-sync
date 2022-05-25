@@ -150,9 +150,12 @@ local function fetch_signed_json(remote, url)
 	-- cloudflare's reverse proxies send http chunked responses with chunk sizes
 	-- for whatever reasons the chunk size gets smashed into the result
 	-- this is a hack to fish it out, it is irrelevant on unaffected reverse proxies
-	local j_start = result:find('{')
-	local j_end = (result:reverse()):find("}")
-	result = string.sub(result, j_start, (1 - j_end) > 0 and (1 - j_end) or nil)
+	if result:find("{") then
+		result = result:sub(result:find("{"), result:len())
+	end
+	if (result:reverse()):find("}") then
+		result = result:sub(0, result:len() - (result:reverse()):find("}") + 1)
+	end
 
 	local sig = res.headers['x-ecdsa']
 	local ts = res.headers['x-ecdsa-ts']
