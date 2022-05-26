@@ -58,7 +58,7 @@ for MODULE in "PACKAGES_LUCI" "PACKAGES_CM"; do
 	} > "$MESSAGE"
 
 	# modify modules file
-	sed -i "s/${LOCAL_HEAD}/${REMOTE_HEAD}/" ./modules
+	sed -i "s/${LOCAL_HEAD}/${REMOTE_HEAD}/" ./site/modules
 	git -C site add ./modules
 
 	git -C site commit -F "${MESSAGE}"
