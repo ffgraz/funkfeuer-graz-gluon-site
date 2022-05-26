@@ -16,7 +16,6 @@ GLUON_FEATURES := \
 	web-private-wifi \
 	web-private-ap \
 	web-logging \
-	config-mode-theme-funkfeuer \
 	mesh-vpn-openvpn \
 	web-mesh-vpn-openvpn \
 	authorized-keys \
@@ -31,7 +30,8 @@ GLUON_FEATURES := \
 GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
   ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn \
   ffgraz-static-ip ffgraz-web-static-ip \
-  ffgraz-manman-sync ffgraz-config-mode-manman-sync
+  ffgraz-manman-sync ffgraz-config-mode-manman-sync \
+  ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
