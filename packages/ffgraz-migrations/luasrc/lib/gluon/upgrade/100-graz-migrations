@@ -1,0 +1,4 @@
+#!/usr/bin/lua
+
+local uci = require('simple-uci').cursor()
+
