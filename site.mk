@@ -33,7 +33,8 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
   ffgraz-manman-sync ffgraz-config-mode-manman-sync \
   ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
   ffgraz-config-mode-at-runtime \
-  ffgraz-migrations
+  ffgraz-migrations \
+	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
