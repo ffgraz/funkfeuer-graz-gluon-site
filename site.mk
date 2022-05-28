@@ -16,8 +16,6 @@ GLUON_FEATURES := \
 	web-private-wifi \
 	web-private-ap \
 	web-logging \
-	mesh-vpn-openvpn \
-	web-mesh-vpn-openvpn \
 	authorized-keys \
 	config-mode-core
 
