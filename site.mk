@@ -19,6 +19,9 @@ GLUON_FEATURES := \
 	authorized-keys \
 	config-mode-core
 
+GLUON_FEATURES_standard := \
+	wireless-encryption-wpa3
+
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
 #		A minus sign may be prepended to remove a packages from the
@@ -26,12 +29,12 @@ GLUON_FEATURES := \
 #		chosen feature flags
 
 GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
-  ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn \
-  ffgraz-static-ip ffgraz-web-static-ip \
-  ffgraz-manman-sync ffgraz-config-mode-manman-sync \
-  ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
-  ffgraz-config-mode-at-runtime \
-  ffgraz-migrations \
+	ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn \
+	ffgraz-static-ip ffgraz-web-static-ip \
+	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
+	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
+	ffgraz-config-mode-at-runtime \
+	ffgraz-migrations \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn
 
 ##	DEFAULT_GLUON_RELEASE
