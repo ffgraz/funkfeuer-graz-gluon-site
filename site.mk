@@ -22,6 +22,9 @@ GLUON_FEATURES := \
 GLUON_FEATURES_standard := \
 	wireless-encryption-wpa3
 
+GLUON_FEATURES_yggdrasil := \
+	wireless-encryption-wpa3
+
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
 #		A minus sign may be prepended to remove a packages from the
@@ -36,6 +39,9 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-migrations \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn
+
+GLUON_SITE_PACKAGES_yggdrasil := \
+	ffgraz-yggdrasil
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
