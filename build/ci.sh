@@ -10,6 +10,14 @@ if [ ! -z "$FF_experimental" ]; then
   PARAMS+=(GLUON_AUTOUPDATER_BRANCH=experimental GLUON_AUTOUPDATER_ENABLED=1)
 fi
 
+if [ ! -z "$FF_upstream" ]; then
+  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=upstream GLUON_AUTOUPDATER_ENABLED=1)
+fi
+
+if [ ! -z "$FF_beta" ]; then
+  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=beta GLUON_AUTOUPDATER_ENABLED=1)
+fi
+
 if [ ! -z "$FF_stable" ]; then
   # no autoupdates by default
   PARAMS+=(GLUON_AUTOUPDATER_BRANCH=stable)
