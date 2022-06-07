@@ -38,6 +38,7 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-migrations \
+	ffgraz-blink \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := \
