@@ -32,17 +32,20 @@ GLUON_FEATURES_yggdrasil := \
 #		chosen feature flags
 
 GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
-	ffgraz-ddhcpd-nextnode ffgraz-mesh-olsr12-openvpn \
+	ffgraz-ddhcpd-nextnode \
 	ffgraz-static-ip ffgraz-web-static-ip \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-migrations \
-	ffgraz-blink \
-	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn
+	ffgraz-blink
+
+GLUON_SITE_PACKAGES_standard := \
+	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := \
-	ffgraz-yggdrasil
+	ffgraz-yggdrasil \
+	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
