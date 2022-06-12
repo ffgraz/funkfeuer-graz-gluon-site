@@ -9,4 +9,4 @@ PACKAGES_LUCI_COMMIT=28e92e3f8c3bd06ecbade1873f2c255c354672c2
 
 PACKAGES_CM_REPO=https://github.com/freifunk-gluon/community-packages.git
 PACKAGES_CM_COMMIT=6755b7b476ec00973eeb3e03fedca7974b1cf670
-PACKAGES_CM_BRANCH=master
+PACKAGES_CM_BRANCH=funkfeuer
