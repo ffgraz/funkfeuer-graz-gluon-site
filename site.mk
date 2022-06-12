@@ -14,7 +14,6 @@ GLUON_FEATURES := \
 	web-wizard \
 	web-admin \
 	web-private-wifi \
-	web-private-ap \
 	web-logging \
 	authorized-keys \
 	config-mode-core
@@ -37,6 +36,8 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
 	ffgraz-config-mode-at-runtime \
+	ffgraz-private-ap ffgraz-web-private-ap \
+	ffgraz-public-ip ffgraz-web-public-ip \
 	ffgraz-migrations \
 	ffgraz-blink
 
