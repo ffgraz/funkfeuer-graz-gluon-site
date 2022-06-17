@@ -13,6 +13,9 @@ local hostname = pretty_hostname.get(uci)
 local manapi = site.manman.api()
 local mankey = site.manman.key()
 
+-- increment on every change that causes sync behaviour to change
+local SYNC_VERSION = '10'
+
 -- CLI lib from olsrd-cli (TODO: move to it's own lib package)
 -- DO NOT EDIT HERE, JUST COPY FROM THERE
 
@@ -254,7 +257,7 @@ local function do_manman_sync()
 
 	uci:set('gluon-manman-sync', 'sync', 'location', location.location.name)
 
-	if uci:get('gluon-manman-sync', 'sync', 'last_data') and json.stringify(location) == uci:get('gluon-manman-sync', 'sync', 'last_data') then
+	if uci:get('gluon-manman-sync', 'sync', 'last_data') and json.stringify(location) == uci:get('gluon-manman-sync', 'sync', 'last_data') and uci:get('gluon-manman-sync', 'sync', 'last_version') == SYNC_VERSION then
 		print('Nothing changed, skipping sync')
 		return 0
 	end
@@ -352,6 +355,7 @@ local function do_manman_sync()
 	set('gluon', 'mesh_vpn', 'enabled', has_tunnel, true)
 
 	uci:set('gluon-manman-sync', 'sync', 'last_data', json.stringify(location))
+	uci:set('gluon-manman-sync', 'sync', 'last_version', SYNC_VERSION)
 
 	uci:save('system')
 	uci:save('gluon')
@@ -399,7 +403,7 @@ local function enable_sync(location, node)
 	if not uci:get_bool('gluon-manman-sync', 'sync', 'enabled') then
 		uci:set('gluon-manman-sync', 'sync', 'enabled', true)
 		print('Enabled sync.')
-		print('Trigger with manman-sync sync')
+		print('Trigger with: $ manman-sync sync')
 	else
 		print('Sync already enabled.')
 	end
@@ -423,17 +427,17 @@ local function show_info()
 			uci:get('gluon-manman-sync', 'sync', 'location_id') or '[will autodetect]'
 		),
 		node = string.format('%s (id %s)',
-			uci:get('gluon-manman-sync', 'sync', 'node') or '[none - use only available or error]',
+			uci:get('gluon-manman-sync', 'sync', 'node') or '[none - will use only available or error]',
 			uci:get('gluon-manman-sync', 'sync', 'node_id') or '[will autodetect]'
 		),
 	})
 end
 
 sub = {
-	info = { show_info, 'Show manman-sync configuration' },
-	help = { show_help, 'Show help' },
-	sync = { maybe_sync, 'Trigger a manman-sync' },
-	force_sync = { do_manman_sync, 'Trigger a manman-sync, despite being disabled' },
+	info = { show_info, 'Show manman-sync configuration.' },
+	help = { show_help, 'Show help.' },
+	sync = { maybe_sync, 'Trigger a manman-sync.' },
+	force_sync = { do_manman_sync, 'Trigger a manman-sync, despite being disabled.' },
 	enable = { enable_sync, 'Enable sync. [<location>] [<node>]' },
 	disable = { disable_sync, 'Disable sync.' }
 }
