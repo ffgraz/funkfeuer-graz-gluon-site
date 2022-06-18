@@ -14,7 +14,7 @@ local manapi = site.manman.api()
 local mankey = site.manman.key()
 
 -- increment on every change that causes sync behaviour to change
-local SYNC_VERSION = '10'
+local SYNC_VERSION = '11'
 
 -- CLI lib from olsrd-cli (TODO: move to it's own lib package)
 -- DO NOT EDIT HERE, JUST COPY FROM THERE
@@ -101,6 +101,7 @@ end
 local mappings = {
 	wifi = 'radio0',
 	tunnel = 'vpn',
+	ibss = 'ibss_radio0',
 	eth = 'other',
 	lan = 'other',
 	wan = 'uplink',
