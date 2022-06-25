@@ -8,5 +8,5 @@ PACKAGES_LUCI_BRANCH=openwrt-22.03
 PACKAGES_LUCI_COMMIT=c4e1fcd4584169b72f4eb6a530eb9ea9a6ae53d7
 
 PACKAGES_CM_REPO=https://github.com/freifunk-gluon/community-packages.git
-PACKAGES_CM_COMMIT=a29083171e99dfa06f929c919b8cf2abeae9a0da
+PACKAGES_CM_COMMIT=54aa4e4690d1dc9b55f3d5c74bfa4efcbe81df1f
 PACKAGES_CM_BRANCH=funkfeuer
