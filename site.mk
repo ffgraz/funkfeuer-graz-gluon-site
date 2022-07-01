@@ -38,7 +38,8 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-private-ap ffgraz-web-private-ap \
 	ffgraz-migrations \
-	ffgraz-blink
+	ffgraz-blink \
+	ffgraz-olsr-auto-restart
 
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
