@@ -30,7 +30,7 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-static-ip ffgraz-web-static-ip \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
@@ -40,7 +40,7 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson iperf3 -batman-adv tcpdump \
 	ffgraz-migrations \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart
-
+# iperf3 tcpdump
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := \
