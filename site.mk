@@ -30,7 +30,7 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv \
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-static-ip ffgraz-web-static-ip \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
