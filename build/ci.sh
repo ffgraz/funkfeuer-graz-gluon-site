@@ -23,6 +23,10 @@ if [ ! -z "$FF_stable" ]; then
   PARAMS+=(GLUON_AUTOUPDATER_BRANCH=stable)
 fi
 
+if [ ! -z "$FF_RELEASE" ]; then
+  PARAMS+=(GLUON_RELEASE="$FF_RELEASE")
+fi
+
 echo "Cleaning..."
 
 rm -rf output
