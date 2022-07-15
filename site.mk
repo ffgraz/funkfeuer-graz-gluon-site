@@ -30,7 +30,7 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd \
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd iperf3 \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-static-ip ffgraz-web-static-ip \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
@@ -40,7 +40,7 @@ GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd \
 	ffgraz-migrations \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart
-# iperf3 tcpdump
+# tcpdump
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := \
@@ -56,7 +56,7 @@ GLUON_SITE_PACKAGES_yggdrasil := \
 #			opkg compare-versions "$1" '>>' "$2"
 #		to decide if a version is newer or not.
 
-DEFAULT_GLUON_RELEASE := 0.0+exp$(shell date '+%Y%m%d')
+DEFAULT_GLUON_RELEASE := 0.1+exp$(shell date '+%Y%m%d')
 
 # Variables set with ?= can be overwritten from the command line
 
