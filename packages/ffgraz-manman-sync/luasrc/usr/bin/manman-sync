@@ -160,6 +160,10 @@ local function fetch_signed_json(remote, url)
 	if (result:reverse()):find("}") then
 		result = result:sub(0, result:len() - (result:reverse()):find("}") + 1)
 	end
+	-- sometimes it also ends up in the result (it's usually a \n and another \n - will never mess with json as json escapes it)
+	if result:find("\n") then
+		result = result:sub(0, result:find("\n")) .. result:sub((result:reverse()):find("\n") + 1, result:len())
+	end
 
 	local sig = res.headers['x-ecdsa']
 	local ts = res.headers['x-ecdsa-ts']
