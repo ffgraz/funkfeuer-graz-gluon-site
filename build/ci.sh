@@ -4,23 +4,10 @@ make update
 
 cores=$(( $(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1 ))
 
-PARAMS=()
+PARAMS=(GLUON_AUTOUPDATER_BRANCH=$FF_CHANNEL)
 
-if [ ! -z "$FF_experimental" ]; then
-  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=experimental GLUON_AUTOUPDATER_ENABLED=1)
-fi
-
-if [ ! -z "$FF_upstream" ]; then
-  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=upstream GLUON_AUTOUPDATER_ENABLED=1)
-fi
-
-if [ ! -z "$FF_beta" ]; then
-  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=beta GLUON_AUTOUPDATER_ENABLED=1)
-fi
-
-if [ ! -z "$FF_stable" ]; then
-  # no autoupdates by default
-  PARAMS+=(GLUON_AUTOUPDATER_BRANCH=stable)
+if [ ! -z "$FF_experimental" ] || [ ! -z "$FF_upstream" ] || [ ! -z "$FF_dev" ]; then
+  PARAMS+=(GLUON_AUTOUPDATER_ENABLED=1)
 fi
 
 if [ ! -z "$FF_RELEASE" ]; then

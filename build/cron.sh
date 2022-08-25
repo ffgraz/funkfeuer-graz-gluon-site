@@ -1,6 +1,6 @@
 #!/bin/sh
 
-eval "export FF_$FF_CHANNEL=true"
+eval "export FF_${FF_CHANNEL}=true"
 
 ENV=$(env | grep "^FF_")
 SELF=$(dirname $(readlink -f "$0"))
@@ -17,16 +17,8 @@ echo "cd $SELF/../.."
 
 cat "$SELF/ci.sh") | lxc exec gluon -- su "$(id -un)" -s /bin/bash -c "bash -"
 
-if [ -v FF_experimental ]; then
-  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/experimental.manifest
-fi
-
-if [ -v FF_upstream ]; then
-  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/upstream.manifest
-fi
-
-if [ -v FF_dev ]; then
-  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/dev.manifest
+if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ]; then
+  contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/${FF_CHANNEL}.manifest
 fi
 
 rm -rf /storage/ffgraz/www/$FF_CHANNEL
