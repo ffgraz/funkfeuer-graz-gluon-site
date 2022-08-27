@@ -2,3 +2,24 @@
 
 local uci = require('simple-uci').cursor()
 
+function string.starts(str, start)
+	return str:sub(1, #start) == start
+end
+
+-- cleanup old fw
+
+uci:delete('firewall', 'allow_olsr2_wired_mesh')
+uci:delete('firewall', 'allow_olsr4_wired_mesh')
+uci:delete('firewall', 'allow_olsr6_wired_mesh')
+uci:delete('firewall', 'allow_olsr_wired_mesh')
+
+-- migrate ip
+
+local ip = uci:get('gluon-static-ip', 'loopback', 'ip6')
+
+if ip ~= null and (ip:starts('fdff:182f:da60:23:0:') or ip:match("/%d+$")) then
+	uci:delete('gluon-static-ip', 'loopback', 'ip6')
+end
+
+uci:save('firewall')
+uci:save('gluon-static-ip')
