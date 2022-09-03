@@ -34,7 +34,7 @@
 #include <string.h>
 
 
-static struct json_object * get_autoupdater(void) {
+static struct json_object * get_manman(void) {
 	struct uci_context *ctx = uci_alloc_context();
 	if (!ctx)
 		return NULL;
@@ -50,10 +50,16 @@ static struct json_object * get_autoupdater(void) {
 
 	struct json_object *ret = json_object_new_object();
 
-	json_object_object_add(ret, "location_id", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location_id")));
+	const char *is_enabled = uci_lookup_option_string(ctx, s, "enabled");
+	const bool enabled = is_enabled && !strcmp(is_enabled, "1");
+	json_object_object_add(ret, "enabled", json_object_new_boolean(enabled));
 
-	const char *enabled = uci_lookup_option_string(ctx, s, "enabled");
-	json_object_object_add(ret, "enabled", json_object_new_boolean(enabled && !strcmp(enabled, "1")));
+	if (enabled) {
+		json_object_object_add(ret, "location", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location")));
+		json_object_object_add(ret, "location_id", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location_id")));
+		json_object_object_add(ret, "node", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "node")));
+		json_object_object_add(ret, "node_id", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "node_id")));
+	}
 
 	uci_free_context(ctx);
 
@@ -66,7 +72,7 @@ static struct json_object * get_autoupdater(void) {
 
 static struct json_object * respondd_provider_nodeinfo(void) {
 	struct json_object *ret = json_object_new_object();
-	json_object_object_add(ret, "manman", get_autoupdater());
+	json_object_object_add(ret, "manman", get_manman());
 
 	return ret;
 }
