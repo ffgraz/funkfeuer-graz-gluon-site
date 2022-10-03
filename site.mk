@@ -30,7 +30,7 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd iperf3 tcpdump-mini \
+GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd iperf3 tcpdump-mini horst \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
 	ffgraz-static-ip ffgraz-web-static-ip \
