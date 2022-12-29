@@ -30,23 +30,31 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-GLUON_SITE_PACKAGES := iwinfo mtr-nojson -batman-adv softflowd iperf3 tcpdump-mini horst \
-	ffgraz-ddhcpd-nextnode \
-	ffgraz-ddhcpd \
+# deactivated due to size constraints:
+# softflowd
+
+GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-static-ip ffgraz-web-static-ip \
 	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
-	ffgraz-config-mode-at-runtime \
 	ffgraz-private-ap ffgraz-web-private-ap \
 	ffgraz-migrations \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
-GLUON_SITE_PACKAGES_standard := \
+GLUON_SITE_PACKAGES_standard := -batman-adv \
+	iwinfo mtr-nojson iperf3 tcpdump-mini horst \
+	ffgraz-ddhcpd-nextnode \
+	ffgraz-ddhcpd \
+	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
-GLUON_SITE_PACKAGES_yggdrasil := \
+GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
+	iwinfo mtr-nojson iperf3 tcpdump-mini horst \
+	ffgraz-ddhcpd-nextnode \
+	ffgraz-ddhcpd \
+	ffgraz-config-mode-at-runtime \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
