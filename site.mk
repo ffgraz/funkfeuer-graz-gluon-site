@@ -30,9 +30,8 @@ GLUON_FEATURES_yggdrasil := \
 #		selection that would be enabled by default or due to the
 #		chosen feature flags
 
-# deactivated due to size constraints:
-# softflowd horst
-# mtr-nojson 	tcpdump-mini iwinfo  iperf3  \
+# removed as not needed
+# softflowd
 
 GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-static-ip ffgraz-web-static-ip \
@@ -45,12 +44,14 @@ GLUON_SITE_PACKAGES := -batman-adv \
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
+	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
+	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
