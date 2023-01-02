@@ -45,14 +45,14 @@ GLUON_SITE_PACKAGES := -batman-adv \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-ddhcpd-nextnode \
+	ffgraz-ddhcpd-olsrd \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-ddhcpd-nextnode \
+	ffgraz-ddhcpd-olsrd \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-yggdrasil \
