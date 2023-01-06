@@ -19,10 +19,10 @@ GLUON_FEATURES := \
 	config-mode-core
 
 GLUON_FEATURES_standard := \
-	wireless-encryption-wpa3
+	wireless-encryption-wpa3-openssl
 
 GLUON_FEATURES_yggdrasil := \
-	wireless-encryption-wpa3
+	wireless-encryption-wpa3-openssl
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
