@@ -45,7 +45,7 @@ if os.time() < os.time{year=2023, month=3, day=8} and not has_flag('clientap_rol
 				uci:set('wireless', name, 'disabled', false)
 			end
 		end
-	end
+	end)
 	set_flag('clientap_rollout')
 end
 
