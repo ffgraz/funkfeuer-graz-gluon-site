@@ -6,6 +6,14 @@ function string.starts(str, start)
 	return str:sub(1, #start) == start
 end
 
+local function has_flag(flag)
+	return uci:get_bool('ffgraz-migrations', 'flags', flag)
+end
+
+local function set_flag(flag)
+	return uci:set('ffgraz-migrations', 'flags', flag, true)
+end
+
 -- cleanup old fw
 
 uci:delete('firewall', 'allow_olsr2_wired_mesh')
@@ -25,5 +33,22 @@ end
 uci:delete('firewall', 'mesh', 'masq')
 uci:delete('firewall', 'redirect', 'ap_masq')
 
+-- enable clientap
+
+if os.time() < os.time{year=2023, month=3, day=8} and not has_flag('clientap_rollout') then
+	wireless.foreach_radio(uci, function(radio, index, config)
+		local radio_name = radio['.name']
+		local name = 'client_' .. radio_name
+
+		if uci:get('wireless', name) then
+			if uci:get_bool('wireless', name, 'disabled') then
+				uci:set('wireless', name, 'disabled', false)
+			end
+		end
+	end
+	set_flag('clientap_rollout')
+end
+
 uci:save('firewall')
 uci:save('gluon-static-ip')
+uci:save('ffgraz-migrations')
