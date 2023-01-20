@@ -34,7 +34,7 @@ GLUON_FEATURES_yggdrasil := \
 # softflowd
 
 # removed bc of space
-# tcpdump-mini
+# -
 
 GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-static-ip ffgraz-web-static-ip \
@@ -47,14 +47,14 @@ GLUON_SITE_PACKAGES := -batman-adv \
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
-	iwinfo mtr-nojson iperf3 horst \
+	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
-	iwinfo mtr-nojson iperf3 horst \
+	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
