@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
 local uci = require('simple-uci').cursor()
+local wireless = require 'gluon.wireless'
 
 function string.starts(str, start)
 	return str:sub(1, #start) == start
