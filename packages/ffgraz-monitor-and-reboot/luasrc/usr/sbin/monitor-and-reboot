@@ -222,11 +222,11 @@ for _, log in ipairs(prev.log) do
 	handleLog(log, true)
 end
 
-local ret = conn:call("log", "read", { stream = true, oneshot = false, lines = 0 }, function (log, control)
+local ret = conn:call("log", "read", { stream = true, oneshot = false, lines = 0 }, function (event, control)
 	if control then
 		log(control.type)
 	else
-		handleLog(log)
+		handleLog(event)
 	end
 end)
 
