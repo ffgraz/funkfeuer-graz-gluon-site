@@ -42,21 +42,19 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
 	ffgraz-private-ap ffgraz-web-private-ap \
 	ffgraz-migrations \
+	ffgraz-ddhcpd-nextnode \
+	ffgraz-ddhcpd \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-ddhcpd-nextnode \
-	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-ddhcpd-nextnode \
-	ffgraz-ddhcpd \
 	ffgraz-config-mode-at-runtime \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
