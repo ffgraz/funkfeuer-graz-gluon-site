@@ -44,6 +44,7 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-migrations \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
+	ffgraz-monitor-and-reboot \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \

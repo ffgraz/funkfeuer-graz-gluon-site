@@ -1,0 +1,234 @@
+#!/usr/bin/lua
+
+-- Load modules
+require "ubus"
+require "uloop"
+local uci = require('simple-uci').cursor()
+
+uloop.init()
+
+-- Establish connection
+local conn = ubus.connect()
+if not conn then
+	error("Failed to connect to ubusd")
+end
+
+local prod = os.getenv('MAR_PROD') == '1'
+
+local dry = not prod
+local debug = not prod
+local rollover = 6 * 60 * 60
+local rebootGrace = 60 * 60
+local rebootRollover = 24 * 60 * 60
+local rebootMax = 3
+
+local triggers = {
+	ddhcpd = {
+		find = { 'ddhcpd', 'ERROR:' },
+		count = 10,
+
+		min_uptime = 600,
+	},
+	respondd = {
+		find = { 'respondd', 'in use' },
+		count = 5,
+
+		try_count = 1,
+		try_first = {
+			'service respondd stop',
+			'sleep 1m',
+			'service respondd start',
+		},
+	},
+	mmfd = {
+		find = { 'mmfd', 'unreachable' },
+		count = 10,
+
+		try_count = 1,
+		try_first = {
+			'service mmfd stop',
+			'sleep 1m',
+			'service mmfd start',
+		}
+	}
+}
+
+local state = {}
+local entries = {}
+
+for trigger, _ in pairs(triggers) do
+	state[trigger] = {
+		count = 0,
+		day = '0',
+		tried = 0,
+	}
+end
+
+local function dlog(...)
+	if debug then
+		arg[1] = '[DEBUG REBOOT] ' .. arg[1]
+		print(string.format(unpack(arg)))
+	end
+end
+
+local function log(...)
+	arg[1] = '[m-a-r] ' .. arg[1]
+	conn:call('log', 'write', { event = string.format(unpack(arg)) })
+
+	if debug then
+		dlog(unpack(arg))
+	end
+end
+
+local function get_count(trigger)
+	local count = 0
+	local newTable = {}
+
+	for _, e in ipairs(entries) do
+		if e[2] + rollover > os.time() then
+			table.insert(newTable, e)
+
+			if e[1] == trigger then
+				count = count + 1
+			end
+		end
+	end
+
+	entries = newTable
+
+	return count
+end
+
+local function countReboots()
+	local list = uci:get_list('ffgraz-monitor-and-reboot', 'state', 'reboots')
+	local newList = {}
+	local count = 0
+	local needSave = false
+	local last = 0
+
+	if not list then
+		return count, last
+	end
+
+	for _, ts in ipairs(list) do
+		if tonumber(ts) + rebootRollover > os.time() then
+			count = count + 1
+			table.insert(newList, ts)
+			last = tonumber(ts)
+		else
+			needSave = true
+		end
+	end
+
+	if needSave then
+		uci:set_list('ffgraz-monitor-and-reboot', 'state', 'reboots', newList)
+		uci:save('ffgraz-monitor-and-reboot')
+		os.execute('uci commit')
+	end
+
+	return count, last
+end
+
+local function maybeReboot(trigger, old)
+	dlog('maybe reboot triggered')
+	local count, last = countReboots()
+	dlog('count %s, last %s', count, last)
+
+	if count < rebootMax and last + rebootGrace < os.time() and not old then
+		log('rebooting because of %s failure!', trigger)
+		log('count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
+		
+		dlog('store...')
+		local list = uci:get_list('ffgraz-monitor-and-reboot', 'state', 'reboots') or {}
+		table.insert(list, tostring(os.time()))
+		uci:set_list('ffgraz-monitor-and-reboot', 'state', 'reboots', list)
+		uci:save('ffgraz-monitor-and-reboot')
+		os.execute('sleep 2s')
+		os.execute('uci commit')
+		os.execute('sleep 2s')
+		
+		if not dry then
+			os.execute('reboot')
+		else
+			dlog('[dry reboot]')
+			os.exit(0)
+		end
+	else
+		if old then
+			dlog('[ old message ]: count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
+		else
+			log('not rebooting %s: count %s/%s, grace left %s', trigger, count, rebootMax, (last + rebootGrace) - os.time())
+		end
+	end
+end
+
+local function handleLog (log, old)
+	if log.msg:find('DEBUG REBOOT') then
+		return
+	end
+
+	local time = log.time / 1000
+
+	for trigger, t in pairs(triggers) do
+		local s = state[trigger]
+
+		local satisfied = true
+
+		for _, cond in ipairs(t.find) do
+			if not log.msg:find(cond) then
+				satisfied = false
+			end
+		end
+
+		if satisfied then
+			dlog('%s satisfied', trigger)
+
+			count = get_count(trigger)
+
+			if not s.min_uptime or os.uptime() > t.min_uptime then
+				if t.try_count and not s.tried + t.try_grace > time then
+					s.tried = time
+					log('trying to fix %s', trigger)
+					for _, cmd in ipairs(t.try_first) do
+						dlog('try %s', cmd)
+						if not dry then
+							os.execute(cmd)
+						else
+							dlog('[dry]')
+						end
+					end
+				else
+					table.insert(entries, { trigger, time })
+
+					dlog('count at %s from max %s', count, t.count)
+					if count >= t.count then
+						maybeReboot(trigger, old)
+					end
+				end
+			else
+				dlog('not enough uptime - current %s req %s', os.uptime(), t.min_uptime)
+			end
+		end
+	end
+		
+end
+
+-- Say hello
+log('starting...')
+
+-- Stream logs
+local prev = conn:call("log", "read", { stream = false, oneshot = true, lines = 1024 * 1024 })
+for _, log in ipairs(prev.log) do
+	handleLog(log, true)
+end
+
+local ret = conn:call("log", "read", { stream = true, oneshot = false, lines = 0 }, function (log, control)
+	if control then
+		log(control.type)
+	else
+		handleLog(log)
+	end
+end)
+
+uloop.run()
+
