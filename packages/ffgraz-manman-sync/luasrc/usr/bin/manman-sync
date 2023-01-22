@@ -14,7 +14,7 @@ local manapi = site.manman.api()
 local mankey = site.manman.key()
 
 -- increment on every change that causes sync behaviour to change
-local SYNC_VERSION = '11'
+local SYNC_VERSION = '12'
 
 -- CLI lib from olsrd-cli (TODO: move to it's own lib package)
 -- DO NOT EDIT HERE, JUST COPY FROM THERE
@@ -350,6 +350,10 @@ local function do_manman_sync()
 			net_mapped = 'mesh_' .. net_mapped
 		end
 
+		if net.netmask == "255.255.255.255" and net.ip:find("^10.12.") then
+			-- this fixes olsr broadcasts
+			net.netmask = "255.255.0.0"
+		end
 		local cidr = ip.new(net.ip, net.netmask):string()
 
 		print('Syncing ' .. net_name .. ' as ' .. net_mapped .. ' to ' .. cidr)
