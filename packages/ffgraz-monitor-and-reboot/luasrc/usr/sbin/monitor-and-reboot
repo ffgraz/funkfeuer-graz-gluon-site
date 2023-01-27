@@ -34,6 +34,7 @@ local triggers = {
 		count = 5,
 
 		try_count = 1,
+		try_grace = 60 * 60,
 		try_first = {
 			'service respondd stop',
 			'sleep 1m',
@@ -45,6 +46,7 @@ local triggers = {
 		count = 10,
 
 		try_count = 1,
+		try_grace = 60 * 60,
 		try_first = {
 			'service mmfd stop',
 			'sleep 1m',
