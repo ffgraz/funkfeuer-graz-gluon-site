@@ -61,7 +61,6 @@ local entries = {}
 for trigger, _ in pairs(triggers) do
 	state[trigger] = {
 		count = 0,
-		day = '0',
 		tried = 0,
 	}
 end
