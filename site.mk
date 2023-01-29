@@ -6,6 +6,7 @@
 #		depending on the combination of features listed
 
 GLUON_FEATURES := \
+	logging \
 	autoupdater \
 	mesh-olsrd \
 	respondd \
