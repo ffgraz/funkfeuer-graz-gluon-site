@@ -49,16 +49,17 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart \
 	ffda-gluon-usteer
-#	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
+	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
+	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
