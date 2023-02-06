@@ -47,7 +47,8 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-ddhcpd \
 	ffgraz-monitor-and-reboot \
 	ffgraz-blink \
-	ffgraz-olsr-auto-restart
+	ffgraz-olsr-auto-restart \
+	ffda-gluon-usteer
 #	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
