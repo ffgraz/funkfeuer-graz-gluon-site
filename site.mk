@@ -53,12 +53,12 @@ GLUON_SITE_PACKAGES := -batman-adv \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-config-mode-at-runtime \
+	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	tcpdump-mini iwinfo mtr-nojson iperf3 horst \
-	ffgraz-config-mode-at-runtime \
+	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
