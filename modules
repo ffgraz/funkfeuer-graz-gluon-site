@@ -5,7 +5,7 @@ PACKAGES_SITE_BRANCH=$(git -C site/ rev-parse --abbrev-ref HEAD)
 
 PACKAGES_LUCI_REPO=https://github.com/openwrt/luci.git
 PACKAGES_LUCI_BRANCH=openwrt-22.03
-PACKAGES_LUCI_COMMIT=09d68fb2e3061710be1b3b56467eb43c9c0dc32d
+PACKAGES_LUCI_COMMIT=790b738ddad6cdc54e897ab7b89208e15394b489
 
 PACKAGES_CM_REPO=https://github.com/freifunk-gluon/community-packages.git
 PACKAGES_CM_COMMIT=a8e6d64f41a91a109247cff14f0143b66d628c8e
