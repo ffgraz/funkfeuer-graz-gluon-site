@@ -3,9 +3,9 @@
 local uci = require('simple-uci').cursor()
 local ip = require 'luci.ip' -- luci-lib-ip
 local fetch = require 'luci.httpclient'
-local json = require 'luci.jsonc'
-local ecdsa = require 'ecdsa'
 local site = require 'gluon.site'
+local json = require 'luci.jsonc'
+local SignedRequest = require 'gluon.signed-request'
 
 local pretty_hostname = require 'pretty_hostname'
 local hostname = pretty_hostname.get(uci)
@@ -131,76 +131,6 @@ local function shuffle(tbl)
 	return tbl
 end
 
-local function fetch_signed_json(remote, url)
-	print('GET ' .. url)
-
-	local code, res, result = fetch.request_raw(remote .. url)
-
-	if code < 1 then
-		print('E: failed to fetch')
-		return 1
-	end
-
-	if code == 404 then
-		print('E: location does not exist')
-		return 2
-	end
-
-	if code ~= 200 then
-		print('E: got status code ' .. code)
-		return 1
-	end
-
-	-- cloudflare's reverse proxies send http chunked responses with chunk sizes
-	-- for whatever reasons the chunk size gets smashed into the result
-	-- this is a hack to fish it out, it is irrelevant on unaffected reverse proxies
-	if result:find("{") > 1 then
-		result = result:sub(result:find("{"), result:len())
-	end
-	if (result:reverse()):find("}") > 1 then
-		result = result:sub(0, result:len() - (result:reverse()):find("}") + 1)
-	end
-	-- sometimes it also ends up in the result (it's usually a \n and another \n - will never mess with json as json escapes it)
-	if result:find("\n") then
-		result = result:sub(0, result:find("\n")) .. result:sub((result:reverse()):find("\n") + 1, result:len())
-	end
-
-	local sig = res.headers['x-ecdsa']
-	local ts = res.headers['x-ecdsa-ts']
-
-	if not sig or not ts then
-		print('E: provided response is not signed')
-		return 1
-	end
-
-	local tsi = tonumber(ts)
-	local now = os.time()
-
-	if now - tsi > 5  * 60 then
-		print('E: response is too old')
-		return 1
-	end
-
-	if tsi > now then
-		print('W: our clock is behind %s seconds', tsi - now)
-	end
-
-	local data = ts .. '@' .. result
-	if not ecdsa.verify(data, sig, mankey) then
-		print('E: signature invalid or not signed with expected key')
-		return 1
-	end
-
-	local obj = json.parse(result)
-
-	if obj == nil then
-		print('E: failed to parse json data')
-		return 1
-	end
-
-	return false, obj
-end
-
 local function do_manman_sync()
 	if not uci:get('gluon-manman-sync', 'sync', 'location_id') and not uci:get('gluon-manman-sync', 'sync', 'location') then
 		print('E: manman location missing')
@@ -233,13 +163,27 @@ local function do_manman_sync()
 		return 1
 	end
 
+	local signed = SignedRequest(working_remote, mankey)
+	function signed:fetch(url)
+		print('GET ' .. url)
+
+		local res, errcode, err = self:fetch_signed_json(url)
+
+		if errcode then
+			print('E: ' .. err or errcode)
+			return errcode == 404 and 2 or 1, nil
+		end
+
+		return nil, res
+	end
+
 	-- try to fetch data
 	print('Fetching manman data...')
 	local location_id = uci:get('gluon-manman-sync', 'sync', 'location_id')
 	local location = uci:get('gluon-manman-sync', 'sync', 'location')
 
 	if not location_id and location then
-		local err, resp = fetch_signed_json(working_remote, '/find_location_by_name/' .. location)
+		local err, resp = signed:fetch('/find_location_by_name/' .. location)
 		if err then
 			return err
 		end
@@ -253,7 +197,7 @@ local function do_manman_sync()
 		location_id = resp.id
 	end
 
-	local err, location = fetch_signed_json(working_remote, '/location/show/' .. location_id)
+	local err, location = signed:fetch('/location/show/' .. location_id)
 	if err then
 		return err
 	end
@@ -378,6 +322,7 @@ local function do_manman_sync()
 		os.execute('exec gluon-reconfigure')
 		os.execute('exec gluon-reload')
 	else
+		os.execute('uci commit')
 		print('No settings changes, no reason to reload')
 	end
 end
