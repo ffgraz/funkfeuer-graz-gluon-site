@@ -17,6 +17,10 @@ echo "cd $SELF/../.."
 
 cat "$SELF/ci.sh") | lxc exec gluon -- su "$(id -un)" -s /bin/bash -c "bash -"
 
+if [ ! -e openwrt/key* ]; then
+  cp -v /storage/ffgraz/key* .
+fi
+
 if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ]; then
   contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/${FF_CHANNEL}.manifest
 fi

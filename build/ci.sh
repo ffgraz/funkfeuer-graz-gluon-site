@@ -2,6 +2,10 @@
 
 make update
 
+if [ -e key* ]; then
+  mv -v key* openwrt
+fi
+
 cores=$(( $(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1 ))
 
 PARAMS=(GLUON_AUTOUPDATER_BRANCH=$FF_CHANNEL)
