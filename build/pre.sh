@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 SELF=$(dirname $(readlink -f "$0"))
 
