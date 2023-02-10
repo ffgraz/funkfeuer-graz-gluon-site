@@ -1,13 +1,11 @@
 #!/bin/sh
 
+shopt -s nullglob
+
 eval "export FF_${FF_CHANNEL}=true"
 
 ENV=$(env | grep "^FF_")
 SELF=$(dirname $(readlink -f "$0"))
-
-if ! lxc info gluon 2>/dev/null >/dev/null; then
-  bash "$SELF/lxd.sh"
-fi
 
 (for e in $ENV; do
   echo "export $e"
@@ -17,7 +15,8 @@ echo "cd $SELF/../.."
 
 cat "$SELF/ci.sh") | lxc exec gluon -- su "$(id -un)" -s /bin/bash -c "bash -"
 
-if [ ! -e openwrt/key* ]; then
+KEYS=(openwrt/key-build*)
+if [ "${#KEYS[*]}" -lt 1 ]; then
   cp -v /storage/ffgraz/key* .
 fi
 

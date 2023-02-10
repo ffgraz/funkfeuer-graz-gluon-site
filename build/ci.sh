@@ -1,9 +1,12 @@
 #!/bin/bash
 
+shopt -s nullglob
+
 make update
 
-if [ -e key* ]; then
-  mv -v key* openwrt
+KEYS=(key-build*)
+if [ "${#KEYS[*]}" -ge 1 ]; then
+  mv -v key-build* openwrt
 fi
 
 cores=$(( $(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1 ))
