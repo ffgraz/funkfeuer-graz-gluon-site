@@ -13,11 +13,15 @@ cores=$(( $(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1 ))
 
 PARAMS=(GLUON_AUTOUPDATER_BRANCH=$FF_CHANNEL)
 
-if [ ! -z "$FF_experimental" ] || [ ! -z "$FF_upstream" ] || [ ! -z "$FF_dev" ]; then
+if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ] || [ -v FF_master ] || [ -v FF_vanilla_experimental ]; then
   PARAMS+=(GLUON_AUTOUPDATER_ENABLED=1)
 fi
 
-if [ ! -z "$FF_RELEASE" ]; then
+if [ -v FF_master ]; then
+  bash master-modules.sh
+fi
+
+if [ -v FF_RELEASE ]; then
   PARAMS+=(GLUON_RELEASE="$FF_RELEASE")
 fi
 
