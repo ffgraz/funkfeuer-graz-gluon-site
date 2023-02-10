@@ -21,6 +21,10 @@ if [ -v FF_master ]; then
   bash master-modules.sh
 fi
 
+if [ -v FF_vanilla_experimental ] || [ -v FF_vanilla ]; then
+  PARAMS+=(GLUON_PREFIX=funkfeuer-graz-vanilla GLUON_BUILDTYPE=ffgraz)
+fi
+
 if [ -v FF_RELEASE ]; then
   PARAMS+=(GLUON_RELEASE="$FF_RELEASE")
 fi
