@@ -2,6 +2,10 @@
 
 shopt -s nullglob
 
+if [ -v FF_master ]; then
+  bash master-modules.sh
+fi
+
 make update
 
 KEYS=(key-build*)
@@ -15,10 +19,6 @@ PARAMS=(GLUON_AUTOUPDATER_BRANCH=$FF_CHANNEL)
 
 if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ] || [ -v FF_master ] || [ -v FF_vanilla_experimental ]; then
   PARAMS+=(GLUON_AUTOUPDATER_ENABLED=1)
-fi
-
-if [ -v FF_master ]; then
-  bash master-modules.sh
 fi
 
 if [ -v FF_vanilla_experimental ] || [ -v FF_vanilla ]; then
