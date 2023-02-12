@@ -47,17 +47,17 @@ local triggers = {
 			'service ddhcpd restart',
 		},
 	},
---	respondd = {
---		find = { 'respondd', 'in use' },
---		count = 5,
---
---		try_grace = 10,
---		try_first = {
---			'service gluon-respondd stop',
---			'killall respondd',
---			'service gluon-respondd start',
---		},
---	},
+	respondd = {
+		find = { 'respondd', 'in use' },
+		count = 5,
+
+		try_grace = 10,
+		try_first = {
+			'service gluon-respondd stop',
+			'killall respondd',
+			'service gluon-respondd start',
+		},
+	},
 	respondd_segfault = {
 		find = { 'sending SIGSEGV to respondd' },
 		count = 5,
