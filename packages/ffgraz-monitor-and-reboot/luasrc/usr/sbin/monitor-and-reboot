@@ -47,17 +47,17 @@ local triggers = {
 			'service ddhcpd restart',
 		},
 	},
-	respondd = {
-		find = { 'respondd', 'in use' },
-		count = 5,
-
-		try_grace = 10,
-		try_first = {
-			'service gluon-respondd stop',
-			'killall respondd',
-			'service gluon-respondd start',
-		},
-	},
+--	respondd = {
+--		find = { 'respondd', 'in use' },
+--		count = 5,
+--
+--		try_grace = 10,
+--		try_first = {
+--			'service gluon-respondd stop',
+--			'killall respondd',
+--			'service gluon-respondd start',
+--		},
+--	},
 	respondd_segfault = {
 		find = { 'sending SIGSEGV to respondd' },
 		count = 5,
@@ -179,8 +179,9 @@ local function maybeReboot(trigger, old)
 			os.execute('reboot')
 		else
 			dlog('[dry reboot]')
-			os.exit(0)
 		end
+
+		os.exit(0)
 	else
 		if old then
 			dlog('[ old message ]: count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
