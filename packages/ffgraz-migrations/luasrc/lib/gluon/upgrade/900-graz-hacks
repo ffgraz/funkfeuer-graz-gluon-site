@@ -4,7 +4,8 @@ local uci = require('simple-uci').cursor()
 
 -- use ff dns and ignore dnsmasq on ap for now
 
-uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'ap' })
+-- uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'ap' })
+uci:del('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface')
 uci:set('ddhcpd', 'nextnode_dns', '10.12.0.10')
 
 uci:save('dhcp')

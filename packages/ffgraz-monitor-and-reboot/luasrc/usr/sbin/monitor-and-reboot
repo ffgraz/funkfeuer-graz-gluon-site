@@ -24,32 +24,49 @@ local rebootMax = 3
 
 local triggers = {
 	ddhcpd = {
+		find = { 'dnsmasq', 'Address already in use' },
+		count = 10,
+
+		try_grace = 60,
+		try_first = {
+			-- order matters
+			'service dnsmasq stop',
+			'service ddhcpd stop',
+			'service dnsmasq start',
+			'service ddhcpd start',
+		},
+	},
+	ddhcpd = {
 		find = { 'ddhcpd', 'ERROR:' },
 		count = 10,
 
 		min_uptime = 600,
+
+		try_grace = 60,
+		try_first = {
+			'service ddhcpd restart',
+		},
 	},
 	respondd = {
 		find = { 'respondd', 'in use' },
 		count = 5,
 
-		try_count = 1,
-		try_grace = 60 * 60,
+		try_grace = 60,
 		try_first = {
-			'service respondd stop',
-			'sleep 1m',
-			'service respondd start',
+			'service gluon-respondd stop',
+			'killall respondd',
+			'sleep 2s',
+			'service gluon-respondd start',
 		},
 	},
 	mmfd = {
 		find = { 'mmfd', 'unreachable' },
 		count = 10,
 
-		try_count = 1,
-		try_grace = 60 * 60,
+		try_grace = 60,
 		try_first = {
 			'service mmfd stop',
-			'sleep 1m',
+			'sleep 2s',
 			'service mmfd start',
 		}
 	}
@@ -72,7 +89,7 @@ local function dlog(...)
 	end
 end
 
-local function log(...)
+local function elog(...)
 	arg[1] = '[m-a-r] ' .. arg[1]
 	conn:call('log', 'write', { event = string.format(unpack(arg)) })
 
@@ -136,8 +153,8 @@ local function maybeReboot(trigger, old)
 	dlog('count %s, last %s', count, last)
 
 	if count < rebootMax and last + rebootGrace < os.time() and not old then
-		log('rebooting because of %s failure!', trigger)
-		log('count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
+		elog('rebooting because of %s failure!', trigger)
+		elog('count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
 		
 		dlog('store...')
 		local list = uci:get_list('ffgraz-monitor-and-reboot', 'state', 'reboots') or {}
@@ -158,17 +175,23 @@ local function maybeReboot(trigger, old)
 		if old then
 			dlog('[ old message ]: count %s/%s, grace left %s', count, rebootMax, (last + rebootGrace) - os.time())
 		else
-			log('not rebooting %s: count %s/%s, grace left %s', trigger, count, rebootMax, (last + rebootGrace) - os.time())
+			elog('not rebooting %s: count %s/%s, grace left %s', trigger, count, rebootMax, (last + rebootGrace) - os.time())
 		end
 	end
 end
+
+local uptime_file = assert(io.open("/proc/uptime", "r"))
+local uptime = math.floor(assert(uptime_file:read("*number")))
+uptime_file:close()
+
+local boottime = os.time() - uptime
 
 local function handleLog (log, old)
 	if log.msg:find('DEBUG REBOOT') then
 		return
 	end
 
-	local time = log.time / 1000
+	local time = math.floor(log.time / 1000)
 
 	for trigger, t in pairs(triggers) do
 		local s = state[trigger]
@@ -186,10 +209,17 @@ local function handleLog (log, old)
 
 			count = get_count(trigger)
 
-			if not s.min_uptime or os.uptime() > t.min_uptime then
-				if t.try_count and not s.tried + t.try_grace > time then
+			if not s.min_uptime or ((time - boottime) > t.min_uptime) then
+				table.insert(entries, { trigger, time })
+
+				dlog('count at %s from max %s', count, t.count)
+				if count >= t.count then
+					maybeReboot(trigger, old)
+				end
+
+				if (not t.try_count or t.try_count <= count) and not (s.tried + t.try_grace > time) and not old then
 					s.tried = time
-					log('trying to fix %s', trigger)
+					elog('trying to fix %s', trigger)
 					for _, cmd in ipairs(t.try_first) do
 						dlog('try %s', cmd)
 						if not dry then
@@ -197,13 +227,6 @@ local function handleLog (log, old)
 						else
 							dlog('[dry]')
 						end
-					end
-				else
-					table.insert(entries, { trigger, time })
-
-					dlog('count at %s from max %s', count, t.count)
-					if count >= t.count then
-						maybeReboot(trigger, old)
 					end
 				end
 			else
@@ -215,7 +238,7 @@ local function handleLog (log, old)
 end
 
 -- Say hello
-log('starting...')
+elog('starting...')
 
 -- Stream logs
 local prev = conn:call("log", "read", { stream = false, oneshot = true, lines = 1024 * 1024 })
@@ -225,7 +248,7 @@ end
 
 local ret = conn:call("log", "read", { stream = true, oneshot = false, lines = 0 }, function (event, control)
 	if control then
-		log(control.type)
+		elog(control.type)
 	else
 		handleLog(event)
 	end
