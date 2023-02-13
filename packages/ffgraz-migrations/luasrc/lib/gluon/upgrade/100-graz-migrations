@@ -68,6 +68,15 @@ if not has_flag('disable_5ghz_mesh_by_def') then
 	set_flag('disable_5ghz_mesh_by_def')
 end
 
+if not has_flag('exp_to_beta') then
+	-- since this runs before 500-autoupdater, which sets branch on first install, this won't affect new experimental installs
+	if uci:get('autoupdater', 'settings', 'branch') == 'experimental' then
+		uci:set('autoupdater', 'settings', 'branch')
+		uci:save('autoupdater')
+	end
+	set_flag('exp_to_beta')
+end
+
 uci:save('firewall')
 uci:save('gluon-static-ip')
 uci:save('ffgraz-migrations')
