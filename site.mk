@@ -15,7 +15,6 @@ GLUON_FEATURES := \
 	web-wizard \
 	web-admin \
 	web-private-wifi \
-	web-logging \
 	authorized-keys \
 	config-mode-core
 
@@ -53,13 +52,11 @@ GLUON_SITE_PACKAGES := -batman-adv \
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	iwinfo mtr-nojson iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	iwinfo mtr-nojson iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
