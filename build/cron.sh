@@ -20,7 +20,7 @@ if [ "${#KEYS[*]}" -lt 1 ]; then
   cp -v /storage/ffgraz/key* .
 fi
 
-if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ]; then
+if [ -v FF_experimental ] || [ -v FF_upstream ] || [ -v FF_dev ] || [ -v FF_vanilla_experimental ] || [ -v FF_master ]; then
   contrib/sign.sh /storage/ffgraz/nightly-key output/images/sysupgrade/${FF_CHANNEL}.manifest
 fi
 
