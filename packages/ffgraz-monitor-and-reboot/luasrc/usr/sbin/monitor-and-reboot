@@ -55,6 +55,7 @@ local triggers = {
 		try_first = {
 			'service gluon-respondd stop',
 			'killall respondd',
+			'killall olsr-respondd',
 			'service gluon-respondd start',
 		},
 	},
