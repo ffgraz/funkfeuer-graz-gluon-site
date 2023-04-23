@@ -20,14 +20,10 @@ GLUON_FEATURES := \
 	config-mode-core
 
 # GLUON_FEATURES_standard := \
-#    wireless-encryption-wpa3-openssl
- 
-GLUON_FEATURES_big := \
-   wireless-encryption-wpa3-openssl \
-   p2p-support
+#    wireless-encryption-wpa3
 
-GLUON_FEATURES_p2p := \
-   p2p-support
+GLUON_FEATURES_big := \
+   wireless-encryption-wpa3
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
@@ -43,13 +39,11 @@ GLUON_FEATURES_p2p := \
 
 GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-static-ip ffgraz-web-static-ip \
-	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
 	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
 	ffgraz-private-ap ffgraz-web-private-ap \
 	ffgraz-migrations \
 	ffgraz-ddhcpd-nextnode \
 	ffgraz-ddhcpd \
-	ffgraz-monitor-and-reboot \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart \
 	ffda-gluon-usteer \
@@ -58,16 +52,16 @@ GLUON_SITE_PACKAGES := -batman-adv \
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	iwinfo mtr-nojson iperf3 \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
+	ffgraz-config-mode-at-runtime \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
 
 GLUON_SITE_PACKAGES_p2p := -batman-adv \
 	iwinfo mtr-nojson iperf3 \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote
+	ffgraz-config-mode-at-runtime
 
 GLUON_SITE_PACKAGES_big := -batman-adv \
 	iwinfo mtr-nojson tcpdump iperf3 horst \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
+	ffgraz-config-mode-at-runtime \
 	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
 	ffgraz-yggdrasil
