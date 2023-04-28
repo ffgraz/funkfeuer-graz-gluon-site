@@ -27,7 +27,7 @@ uci:delete('firewall', 'allow_olsr_wired_mesh')
 local ip = uci:get('gluon-static-ip', 'loopback', 'ip6')
 
 if ip ~= null and (ip:starts('fdff:182f:da60:23:') or ip:match("/%d+$")) then
-	uci:delete('gluon-static-ip', 'loopback', 'ip6')
+	uci:delete('gluon-static-ip', 'loopback')
 end
 
 -- migrate private ap
