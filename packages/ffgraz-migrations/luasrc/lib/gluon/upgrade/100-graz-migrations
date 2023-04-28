@@ -3,10 +3,6 @@
 local uci = require('simple-uci').cursor()
 local wireless = require 'gluon.wireless'
 
-function string.starts(str, start)
-	return str:sub(1, #start) == start
-end
-
 local function has_flag(flag)
 	return uci:get_bool('ffgraz-migrations', 'flags', flag)
 end
@@ -26,7 +22,7 @@ uci:delete('firewall', 'allow_olsr_wired_mesh')
 
 local ip = uci:get('gluon-static-ip', 'loopback', 'ip6')
 
-if ip ~= null and (ip:starts('fdff:182f:da60:23:') or ip:match("/%d+$")) then
+if ip ~= null and (ip:match('^fdff:182f:da60:23:') or ip:match("/%d+$")) then
 	uci:delete('gluon-static-ip', 'loopback')
 end
 
