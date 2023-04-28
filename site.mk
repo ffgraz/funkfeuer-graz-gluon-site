@@ -69,7 +69,7 @@ GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 #			opkg compare-versions "$1" '>>' "$2"
 #		to decide if a version is newer or not.
 
-DEFAULT_GLUON_RELEASE := 0.2+exp$(shell date '+%Y%m%d')
+DEFAULT_GLUON_RELEASE := 0.3+exp$(shell date '+%Y%m%d')
 
 # Variables set with ?= can be overwritten from the command line
 
