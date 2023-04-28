@@ -24,6 +24,7 @@ local ip = uci:get('gluon-static-ip', 'loopback', 'ip6')
 
 if ip ~= null and (ip:match('^fdff:182f:da60:23:') or ip:match("/%d+$")) then
 	uci:delete('gluon-static-ip', 'loopback')
+	uci:commit('gluon-static-ip')
 end
 
 -- migrate private ap
@@ -74,5 +75,4 @@ if not has_flag('exp_2_beta') then
 end
 
 uci:save('firewall')
-uci:save('gluon-static-ip')
 uci:save('ffgraz-migrations')
