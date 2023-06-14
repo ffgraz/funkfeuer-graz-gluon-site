@@ -57,7 +57,7 @@ GLUON_SITE_PACKAGES_standard := -batman-adv \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
 	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
-	wpa-supplicant
+	wpa-supplicant-mini
 
 GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	iwinfo mtr-nojson iperf3 horst \
@@ -65,7 +65,7 @@ GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
 	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
-	wpa-supplicant
+	wpa-supplicant-mini
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
