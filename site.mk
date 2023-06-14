@@ -19,11 +19,11 @@ GLUON_FEATURES := \
 	authorized-keys \
 	config-mode-core
 
-GLUON_FEATURES_standard := \
-	wireless-encryption-wpa3-openssl
-
-GLUON_FEATURES_yggdrasil := \
-	wireless-encryption-wpa3-openssl
+# GLUON_FEATURES_standard := \
+#    wireless-encryption-wpa3-openssl
+ 
+GLUON_FEATURES_big := \
+   wireless-encryption-wpa3-openssl
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
@@ -53,18 +53,16 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffac-ssid-changer
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
-	iwinfo mtr-nojson iperf3 horst \
+	iwinfo mtr-nojson iperf3 \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
-	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
 	wpa-supplicant-mini
 
-GLUON_SITE_PACKAGES_yggdrasil := -batman-adv \
-	iwinfo mtr-nojson iperf3 horst \
+GLUON_SITE_PACKAGES_big := -batman-adv \
+	iwinfo mtr-nojson tcpdump iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
 	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
-	ffgraz-yggdrasil \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
+	ffgraz-yggdrasil \
 	wpa-supplicant-mini
 
 ##	DEFAULT_GLUON_RELEASE
