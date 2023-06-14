@@ -48,7 +48,9 @@ GLUON_SITE_PACKAGES := -batman-adv \
 	ffgraz-monitor-and-reboot \
 	ffgraz-blink \
 	ffgraz-olsr-auto-restart \
-	ffda-gluon-usteer
+	ffda-gluon-usteer \
+	ffac-weeklyreboot \
+	ffac-ssid-changer
 
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	iwinfo mtr-nojson iperf3 horst \
