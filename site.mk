@@ -23,7 +23,11 @@ GLUON_FEATURES := \
 #    wireless-encryption-wpa3-openssl
  
 GLUON_FEATURES_big := \
-   wireless-encryption-wpa3-openssl
+   wireless-encryption-wpa3-openssl \
+   p2p-support
+
+GLUON_FEATURES_p2p := \
+   p2p-support
 
 ##	GLUON_SITE_PACKAGES
 #		Specify additional Gluon/OpenWrt packages to include here;
@@ -55,15 +59,18 @@ GLUON_SITE_PACKAGES := -batman-adv \
 GLUON_SITE_PACKAGES_standard := -batman-adv \
 	iwinfo mtr-nojson iperf3 \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	wpa-supplicant-mini
+	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
+
+GLUON_SITE_PACKAGES_p2p := -batman-adv \
+	iwinfo mtr-nojson iperf3 \
+	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote
 
 GLUON_SITE_PACKAGES_big := -batman-adv \
 	iwinfo mtr-nojson tcpdump iperf3 horst \
 	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
 	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
 	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
-	ffgraz-yggdrasil \
-	wpa-supplicant-mini
+	ffgraz-yggdrasil
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
