@@ -2,22 +2,24 @@ function timePassed (base, howMuch) {
   return base <= time() - howMuch;
 }
 
+const MAX_GRACE = 60 * 60;
+
 function ServiceMonitor(name, config, isRunning, storage, poll) {
   let state = isRunning ? 'running' : 'dead';
-  let deadSince = isRunning ? storage.get(name)[0] || time() : null;
-  let revives = isRunning ? 0 : storage.get(name).length;
-  let maxRevives = 3;
+  let deadSince = isRunning ? storage.get(name, MAX_GRACE)[0] || time() : null;
+  let revives = isRunning ? 0 : length(storage.get(name, MAX_GRACE));
+  let maxRevives = config.attempts_until_reboot ?? 5;
 
   const tryReviveAfter = 'downtime_until_restart' in config
     ? config.downtime_until_restart : 10;
 
   function tryRecover() {
     const commands = config.restart ?? [`service ${name} restart`];
-    printf('Fixing %J:\n', name);
+    printf('Fixing %J: %s/%s\n', name, revives, maxRevives);
 
-    for (let i = 0; i < commands.length; i++) {
+    for (let i = 0; i < length(commands); i++) {
       printf(' + %s\n', commands[i]);
-      system(commands[i]);
+      system(commands[i], 10 * 1000);
     }
   }
 
@@ -49,7 +51,19 @@ function ServiceMonitor(name, config, isRunning, storage, poll) {
           break;
         }
         if (revives >= maxRevives) {
-          // service is unfixable, prepare for reboot
+          if (!config.disable_reboot) {
+            // service is unfixable, prepare for reboot
+            const reboots = storage.get('REBOOT', 24 * 60 * 60);
+            if (length(reboots) < 3) {
+              storage.append('REBOOT');
+              printf('Rebooting...\n');
+              system('sleep 3s');
+              system('reboot');
+            }
+            break;
+          }
+
+          printf('%s is currently broken and could not be repaired\n', name);
           break;
         }
         if (timePassed(deadSince, tryReviveAfter)) {
@@ -60,9 +74,9 @@ function ServiceMonitor(name, config, isRunning, storage, poll) {
             break;
           }
 
-          tryRecover();
-          storage.append(name);
           revives++;
+          storage.append(name);
+          tryRecover();
           // queue another revieve if necesarry
           deadSince = time();
           // wait a bit

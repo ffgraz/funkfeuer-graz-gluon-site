@@ -63,12 +63,10 @@
       }
     },
     "restart": [
-      "service dnsmasq stop",
-      "service ddhcpd stop",
-      "service dnsmasq start",
-      "service ddhcpd start"
+      "service mmfd restart"
     ],
     "downtime_until_restart": 10,
-    "attempts_until_reboot": 5
+    "attempts_until_reboot": 5,
+    "disable_reboot": true
   }
 }
