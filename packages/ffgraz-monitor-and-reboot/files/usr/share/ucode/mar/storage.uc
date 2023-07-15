@@ -1,19 +1,16 @@
-const uci = require('uci').cursor();
+import { writefile, readfile, access, unlink } from "fs";
 
-function err(e, i) {
-  if (e && (e !== 'Entry not found' || !i)) {
-    printf('ERROR: %J\n', e);
-    die(e);
-  }
+function s(key) {
+  return `/etc/.mar.${key}`
 }
 
 function Storage() {
-  // in uci we have a list that is named $key and that contains several timestamps
-
   function get(key, maxAge) {
-    let list = split(',', uci.get('ffgraz-monitor-and-reboot', 'state', key) ?? '');
-    err(uci.error(), true);
+    const p = s(key);
+    if (!access(p, 'f'))
+      return [];
 
+    let list = split(readfile(p), '\n');
     list = filter(list, str => !!str);
     list = map(list, p => int(p));
 
@@ -27,27 +24,15 @@ function Storage() {
 
   return {
     get,
-    append: (key) => {
-      const list = get(key);
+    append: (key, maxAge) => {
+      const list = get(key, maxAge);
       push(list, time());
-      uci.set('ffgraz-monitor-and-reboot', 'state', key, join(',', list));
-      err(uci.error());
-
-      uci.save('ffgraz-monitor-and-reboot');
-      err(uci.error());
-
-      uci.commit('ffgraz-monitor-and-reboot');
-      err(uci.error());
+      writefile(s(key), join('\n', list));
     },
     clear: (key) => {
-      uci.delete('ffgraz-monitor-and-reboot', 'state', key);
-      err(uci.error());
-
-      uci.save('ffgraz-monitor-and-reboot');
-      err(uci.error());
-
-      uci.commit('ffgraz-monitor-and-reboot');
-      err(uci.error());
+      const p = s(key);
+      if (access(p, 'f'))
+        unlink(p);
     }
   };
 }

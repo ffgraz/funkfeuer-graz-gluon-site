@@ -6,7 +6,7 @@ const MAX_GRACE = 60 * 60;
 
 function ServiceMonitor(name, config, isHealthy, storage, poll, IS_PROD) {
   let state = isHealthy ? 'healthy' : 'dead';
-  let deadSince = isHealthy ? storage.get(name, MAX_GRACE)[0] || time() : null;
+  let deadSince = isHealthy ? null : storage.get(name, MAX_GRACE)[0] || time();
   let revives = isHealthy ? 0 : length(storage.get(name, MAX_GRACE));
   let maxRevives = config.attempts_until_reboot ?? 5;
 
@@ -51,13 +51,13 @@ function ServiceMonitor(name, config, isHealthy, storage, poll, IS_PROD) {
           break;
         }
         // will get rid of all attempts older than an hour
-        maxRevives = length(storage.get(name, MAX_GRACE));
+        revives = length(storage.get(name, MAX_GRACE));
         if (revives >= maxRevives) {
           if (!config.disable_reboot) {
             // service is unfixable, prepare for reboot
             const reboots = storage.get('REBOOT', 24 * 60 * 60);
             if (length(reboots) < 3) {
-              storage.append('REBOOT');
+              storage.append('REBOOT', 24 * 60 * 60);
               printf('Rebooting...\n');
               system('sleep 3s');
               if(IS_PROD)
@@ -80,7 +80,7 @@ function ServiceMonitor(name, config, isHealthy, storage, poll, IS_PROD) {
           }
 
           revives++;
-          storage.append(name);
+          storage.append(name, MAX_GRACE);
           tryRecover();
           // queue another revieve if necesarry
           deadSince = time();
