@@ -6,7 +6,7 @@ let conn = ubus.connect();
 function AdapterProcd() {
   const onService = {};
 
-  function isRunning(name) {
+  function isHealthy(name) {
     assert(name);
 
     const res = conn.call('service', 'list', { name });
@@ -31,7 +31,7 @@ function AdapterProcd() {
 
       if (cb) {
         uloop.timer(100, () => {
-          cb(isRunning(service));
+          cb(isHealthy(service));
         });
       }
 
@@ -62,7 +62,7 @@ function AdapterProcd() {
     warn("Subscribe error: " + ubus.error());
 
   return {
-    isRunning,
+    isHealthy,
     subscribe: (name, onChange) => {
       onService[name] = onChange;
     }

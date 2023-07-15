@@ -9,7 +9,7 @@ uloop.init();
 Design:
 - There are multiple adapters (procd, initd, ...)
   - They have subscribe functions that cause service start/stop events
-    - Or if not isRunning gets polled
+    - Or if not isHealthy gets polled
 - There are multiple monitors
   - These basically are state machines that kick the service if necesarry
 - There is a "main loop" (next to the subscribe loop)
@@ -21,6 +21,8 @@ import Adapters from 'mar.adapters';
 import Storage from 'mar.storage';
 import ServiceMonitor from 'mar.monitor';
 
+const IS_PROD = !!getenv('MAR_PROD');
+
 const storage = Storage();
 
 const ServiceMonitors = {};
@@ -29,7 +31,7 @@ import { open } from 'fs';
 let fd = open('/etc/mar.json', 'r');
 const config = json(fd);
 
-printf('Starting...\n');
+printf('Starting... (production=%s)\n', IS_PROD);
 
 for (let monitorName, monitor in config) {
   const _adapter = monitor.adapter;
@@ -40,15 +42,15 @@ for (let monitorName, monitor in config) {
   const adapter = Adapters[type];
   assert(adapter, 'adapter ' + type + ' not found');
 
-  const isRunning = adapter.isRunning(param);
+  const isHealthy = adapter.isHealthy(param);
 
   function poll() {
-    return adapter.isRunning(param);
+    return adapter.isHealthy(param);
   }
 
-  printf('Monitor %s, running %J\n', monitorName, isRunning);
+  printf('Monitor %s, healthy %J\n', monitorName, isHealthy);
 
-  const monitorInstance = ServiceMonitor(monitorName, monitor, isRunning, storage, poll);
+  const monitorInstance = ServiceMonitor(monitorName, monitor, isHealthy, storage, poll, IS_PROD);
   ServiceMonitors[monitorName] = monitorInstance;
 
   if (adapter.subscribe) {

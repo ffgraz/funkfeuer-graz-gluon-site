@@ -1,11 +1,11 @@
 function AdapterInitd() {
-  function isRunning(name) {
+  function isHealthy(name) {
     // 0=success
     return !system(`service ${name} running`)
   }
 
   return {
-    isRunning
+    isHealthy
   };
 }
 

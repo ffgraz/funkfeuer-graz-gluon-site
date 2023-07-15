@@ -1,7 +1,7 @@
 import { popen } from "fs";
 
 function AdapterSocket() {
-  function isRunning(param) {
+  function isHealthy(param) {
     const socket = param.socket;
     const handle = popen("echo " + ('query' in param ? param['query'] : '') + "|uc " + socket, "r");
 
@@ -29,7 +29,7 @@ function AdapterSocket() {
   }
 
   return {
-    isRunning
+    isHealthy
   };
 }
 

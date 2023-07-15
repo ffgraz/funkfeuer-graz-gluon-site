@@ -4,10 +4,10 @@ function timePassed (base, howMuch) {
 
 const MAX_GRACE = 60 * 60;
 
-function ServiceMonitor(name, config, isRunning, storage, poll) {
-  let state = isRunning ? 'running' : 'dead';
-  let deadSince = isRunning ? storage.get(name, MAX_GRACE)[0] || time() : null;
-  let revives = isRunning ? 0 : length(storage.get(name, MAX_GRACE));
+function ServiceMonitor(name, config, isHealthy, storage, poll, IS_PROD) {
+  let state = isHealthy ? 'healthy' : 'dead';
+  let deadSince = isHealthy ? storage.get(name, MAX_GRACE)[0] || time() : null;
+  let revives = isHealthy ? 0 : length(storage.get(name, MAX_GRACE));
   let maxRevives = config.attempts_until_reboot ?? 5;
 
   const tryReviveAfter = 'downtime_until_restart' in config
@@ -23,33 +23,35 @@ function ServiceMonitor(name, config, isRunning, storage, poll) {
     }
   }
 
-  function machine(newIsRunning) {
-    // we're getting new running state
-    if (newIsRunning === true || newIsRunning === false) {
-      isRunning = newIsRunning;
+  function machine(newIsHealthy) {
+    // we're getting new healthy state
+    if (newIsHealthy === true || newIsHealthy === false) {
+      isHealthy = newIsHealthy;
     }
 
-    // printf('State machine %s %s %J\n', name, state, isRunning);
+    // printf('State machine %s %s %J\n', name, state, isHealthy);
 
     switch (state) {
-      case 'running': {
-        if (!isRunning) {
+      case 'healthy': {
+        if (!isHealthy) {
           state = 'dead';
           deadSince = time();
-          printf('%s is no longer running\n', name);
+          printf('%s is no longer healthy\n', name);
         }
         break;
       }
       case 'dead': {
-        if (isRunning) {
+        if (isHealthy) {
           // we're no longer dead
-          printf('%s is running again\n', name);
-          state = 'running';
+          printf('%s is healthy again\n', name);
+          state = 'healthy';
           revives = 0;
           deadSince = null;
           storage.clear(name);
           break;
         }
+        // will get rid of all attempts older than an hour
+        maxRevives = length(storage.get(name, MAX_GRACE));
         if (revives >= maxRevives) {
           if (!config.disable_reboot) {
             // service is unfixable, prepare for reboot
@@ -58,7 +60,10 @@ function ServiceMonitor(name, config, isRunning, storage, poll) {
               storage.append('REBOOT');
               printf('Rebooting...\n');
               system('sleep 3s');
-              system('reboot');
+              if(IS_PROD)
+                system('reboot');
+              else
+                exit(1);
             }
             break;
           }
@@ -68,8 +73,8 @@ function ServiceMonitor(name, config, isRunning, storage, poll) {
         }
         if (timePassed(deadSince, tryReviveAfter)) {
           // poll again to be really sure
-          isRunning = poll();
-          if (isRunning) {
+          isHealthy = poll();
+          if (isHealthy) {
             machine();
             break;
           }
