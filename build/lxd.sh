@@ -1,6 +1,6 @@
 #!/bin/sh
 
-lxc launch images:debian/11 -c security.privileged=true gluon
+lxc launch images:debian/12 -c security.privileged=true gluon
 yes "
 " | lxc exec gluon -- adduser --uid "$(id -u)" "$(id -un)"
 SRC=$(readlink -f ..)
