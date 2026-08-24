@@ -1,76 +1,8 @@
 ##	gluon site.mk makefile example
 
-##	GLUON_FEATURES
-#		Specify Gluon features/packages to enable;
-#		Gluon will automatically enable a set of packages
-#		depending on the combination of features listed
-
-GLUON_FEATURES := \
-	logging \
-	autoupdater \
-	mesh-olsrd \
-	respondd \
-	status-page \
-	web-advanced \
-	web-wizard \
-	web-admin \
-	web-private-wifi \
-	web-logging \
-	authorized-keys \
-	config-mode-core
-
-# GLUON_FEATURES_standard := \
-#    wireless-encryption-wpa3-openssl
- 
-GLUON_FEATURES_big := \
-   wireless-encryption-wpa3-openssl \
-   p2p-support
-
-GLUON_FEATURES_p2p := \
-   p2p-support
-
-##	GLUON_SITE_PACKAGES
-#		Specify additional Gluon/OpenWrt packages to include here;
-#		A minus sign may be prepended to remove a packages from the
-#		selection that would be enabled by default or due to the
-#		chosen feature flags
-
-# removed as not needed
-# softflowd
-
-# removed bc of space
-# -
-
-GLUON_SITE_PACKAGES := -batman-adv \
-	ffgraz-static-ip ffgraz-web-static-ip \
-	ffgraz-manman-sync ffgraz-config-mode-manman-sync \
-	ffgraz-config-mode-theme-funkfeuer -gluon-config-mode-theme \
-	ffgraz-private-ap ffgraz-web-private-ap \
-	ffgraz-migrations \
-	ffgraz-ddhcpd-nextnode \
-	ffgraz-ddhcpd \
-	ffgraz-monitor-and-reboot \
-	ffgraz-blink \
-	ffgraz-olsr-auto-restart \
-	ffda-gluon-usteer \
-	ffac-weeklyreboot \
-	ffac-ssid-changer
-
-GLUON_SITE_PACKAGES_standard := -batman-adv \
-	iwinfo mtr-nojson iperf3 \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn
-
-GLUON_SITE_PACKAGES_p2p := -batman-adv \
-	iwinfo mtr-nojson iperf3 \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote
-
-GLUON_SITE_PACKAGES_big := -batman-adv \
-	iwinfo mtr-nojson tcpdump iperf3 horst \
-	ffgraz-config-mode-at-runtime ffgraz-config-mode-remote \
-	ffgraz-olsr-public-ip ffgraz-web-olsr-public-ip \
-	ffgraz-mesh-vpn-openvpn ffgraz-web-mesh-vpn-openvpn ffgraz-mesh-olsr12-openvpn \
-	ffgraz-yggdrasil
+##	Features and packages
+#		They live in image-customization.lua now, gluon does not read
+#		GLUON_FEATURES / GLUON_SITE_PACKAGES from here any more.
 
 ##	DEFAULT_GLUON_RELEASE
 #		version string to use for images
