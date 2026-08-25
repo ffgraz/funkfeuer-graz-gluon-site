@@ -6,7 +6,13 @@ local uci = require('simple-uci').cursor()
 
 uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'ap' })
 -- uci:delete('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface')
-uci:set('ddhcpd', 'nextnode_dns', '10.12.0.10')
+
+-- The DNS server handed to clients has to be the option payload: the
+-- three argument form of set() would set the section type instead,
+-- leaving 500-ddhcpd-option-nextnode's payload of the next-node
+-- address in place. dnsmasq is bound to 'ap' above, so nothing answers
+-- on the next-node address and clients end up without working DNS.
+uci:set('ddhcpd', 'nextnode_dns', 'payload', '10.12.0.10')
 
 uci:save('dhcp')
 uci:save('ddhcpd')
