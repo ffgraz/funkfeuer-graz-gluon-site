@@ -4,6 +4,7 @@
 features {
 	'logging',
 	'autoupdater',
+	'mesh-babel',
 	'mesh-olsrd',
 	'respondd',
 	'status-page',
