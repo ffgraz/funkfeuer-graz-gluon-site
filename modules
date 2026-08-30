@@ -16,4 +16,4 @@ PACKAGES_CM_BRANCH=funkfeuer
 # uc / mmfd / l3roamd / libbabelhelper sources that build with current toolchains
 PACKAGES_GLUON_REPO=https://github.com/ffgraz/gluon-packages.git
 PACKAGES_GLUON_BRANCH=funkfeuer
-PACKAGES_GLUON_COMMIT=e8572c7d5e28e12d2a8692c96f97d9d706fa48cd
+PACKAGES_GLUON_COMMIT=e0adb4a87a92d20b87a5a31b8c185fd77677f563
