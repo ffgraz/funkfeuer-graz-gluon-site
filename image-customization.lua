@@ -20,7 +20,7 @@ features {
 packages {
 	'-batman-adv',
 	'ffgraz-static-ip', 'ffgraz-web-static-ip',
-	'ffgraz-manman-sync', 'ffgraz-config-mode-manman-sync',
+	'ffgraz-gluon-provisioning', 'ffgraz-config-mode-gluon-provisioning',
 	'ffgraz-config-mode-theme-funkfeuer', '-gluon-config-mode-theme',
 	'ffgraz-private-ap', 'ffgraz-web-private-ap',
 	'ffgraz-migrations',

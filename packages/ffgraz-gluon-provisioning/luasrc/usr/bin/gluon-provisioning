@@ -1,0 +1,374 @@
+#!/usr/bin/lua
+
+local uci = require('simple-uci').cursor()
+local ip = require 'luci.ip' -- luci-lib-ip
+local site = require 'gluon.site'
+local json = require 'luci.jsonc'
+local util = require 'gluon.util'
+local sysconfig = require 'gluon.sysconfig'
+local wireless = require 'gluon.wireless'
+local pretty_hostname = require 'pretty_hostname'
+
+local api = site.provisioning.api()
+
+-- CLI lib from olsrd-cli (TODO: move to it's own lib package)
+-- DO NOT EDIT HERE, JUST COPY FROM THERE
+
+local function printf(...)
+	print(string.format(...))
+end
+
+-- Print contents of `tbl`, with indentation.
+-- `indent` sets the initial level of indentation.
+-- src https://gist.github.com/xytis/5361405
+local function tprint (tbl, indent)
+	if not indent then indent = 0 end
+	for k, v in pairs(tbl) do
+		local formatting = string.rep('  ', indent) .. k .. ': '
+
+		if type(v) == 'table' then
+			print(formatting)
+			tprint(v, indent + 1)
+		else
+			print(formatting .. tostring(v))
+		end
+	end
+end
+
+-- src https://stackoverflow.com/a/24823383/3990041
+function table.slice(tbl, first, last, step)
+	local sliced = {}
+
+	for i = first or 1, last or #tbl, step or 1 do
+		sliced[#sliced+1] = tbl[i]
+	end
+
+	return sliced
+end
+
+-- CLI lib
+
+local function exec_cmd(args, sub)
+	if sub[args[1]] == nil then
+		return cmd_err('does not exist')
+	else
+		local cmd = sub[args[1]]
+		if cmd[3] ~= nil and #args > 1 then
+			exec_cmd(table.slice(args, 2), cmd[3])
+		else
+			cmd[1](unpack(table.slice(args, 2)))
+		end
+	end
+end
+
+local function list_cmd(level, sub)
+	for key, cmd in pairs(sub) do
+		printf('%s%s: %s', string.rep('  ', level), key, cmd[2])
+		if cmd[3] ~= nil then
+			list_cmd(level + 1, cmd[3])
+		end
+	end
+end
+
+local function show_help()
+	printf('Usage: %s <command>', arg[0])
+	list_cmd(1, sub)
+end
+
+local function cmd_err(msg, no_show_help)
+	-- since argv0 is at... well... 0... even though this is lua...
+	--- ...slice just returns arg without argv0 as the for starts at 1
+	printf('Error: Command "%s" %s', table.concat(table.slice(arg), ' '), msg)
+	if not no_show_help then
+		printf('')
+		show_help()
+	end
+	os.exit(2)
+end
+
+-- ///
+
+-- https://gist.github.com/Uradamus/10323382
+local function shuffle(tbl)
+	for i = #tbl, 2, -1 do
+		local j = math.random(i)
+		tbl[i], tbl[j] = tbl[j], tbl[i]
+	end
+
+	return tbl
+end
+
+local function shellquote(str)
+	return "'" .. (tostring(str):gsub("'", "'\\''")) .. "'"
+end
+
+-- POST body to url with the token as bearer auth, return the decoded JSON body.
+-- uclient-fetch is used instead of a lua http client so that this package does
+-- not pull in one - it is part of the base system.
+local function post_json(url, token, body)
+	local out = os.tmpname()
+
+	local ok = os.execute(table.concat({
+		'uclient-fetch', '-q', '--timeout=20',
+		'-O', shellquote(out),
+		'--post-data=' .. shellquote(body),
+		'--header=' .. shellquote('Content-Type: application/json'),
+		'--header=' .. shellquote('Authorization: Bearer ' .. token),
+		shellquote(url),
+	}, ' ')) == 0
+
+	local f = io.open(out)
+	local raw = f and f:read('*a') or ''
+	if f then f:close() end
+	os.remove(out)
+
+	if not ok then
+		return nil, 'request failed'
+	end
+
+	local resp = json.parse(raw)
+	if type(resp) ~= 'table' then
+		return nil, 'response is not JSON: ' .. raw:sub(1, 200)
+	end
+
+	return resp
+end
+
+-- The interfaces we want addresses for: every mesh interface that is actually
+-- in use asks for IPv4, the loopback carries our IPv6 node address.
+local function requested_interfaces()
+	local want = {}
+
+	local function want_iface(name, family, macaddr)
+		want[name] = { requested_type = family, mac = macaddr }
+	end
+
+	local function want_mesh(name, macaddr)
+		if not uci:get('network', name, 'proto') then return end
+		if uci:get_bool('network', name, 'disabled') then return end
+		want_iface(name, 4, macaddr)
+	end
+
+	want_iface('loopback', 6, uci:get('network', 'loopback', 'macaddr'))
+
+	wireless.foreach_radio(uci, function(radio, _, _)
+		for _, prefix in ipairs({ 'mesh_', 'p2p_', 'ibss_' }) do
+			local name = prefix .. radio['.name']
+			if not uci:get_bool('wireless', name, 'disabled') then
+				want_mesh(name, uci:get('wireless', name, 'macaddr'))
+			end
+		end
+	end)
+
+	-- asked for even when the mesh VPN is currently off: whether the server
+	-- provisions it is what decides if we turn it on
+	want_mesh('mesh_vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
+
+	want_mesh('mesh_uplink', uci:get('network', 'mesh_uplink', 'macaddr'))
+	want_mesh('mesh_other', uci:get('network', 'mesh_other', 'macaddr'))
+
+	return want
+end
+
+local function do_provision()
+	local token = uci:get('gluon-provisioning', 'provisioning', 'token')
+
+	if not token or token == '' then
+		print('E: no provisioning token configured')
+		return 2
+	end
+
+	local want = requested_interfaces()
+
+	local body = json.stringify({
+		primary_mac = sysconfig.primary_mac,
+		node_id = util.node_id(),
+		interfaces = want,
+	})
+
+	local resp, err
+	for _, remote in ipairs(shuffle(api)) do
+		if not resp then
+			local url = remote .. '/provision'
+			print('POST ' .. url)
+
+			resp, err = post_json(url, token, body)
+			if not resp then
+				print('E: ' .. remote .. ': ' .. err)
+			end
+		end
+	end
+
+	if not resp then
+		print('E: could not reach any provisioning server, giving up')
+		return 1
+	end
+
+	if not resp.ok then
+		print('E: provisioning rejected: ' .. (resp.error or 'no reason given'))
+		return 2
+	end
+
+	if type(resp.interfaces) ~= 'table' then
+		print('E: response carries no interfaces')
+		return 1
+	end
+
+	uci:set('gluon-provisioning', 'provisioning', 'location_name', resp.location_name)
+	uci:set('gluon-provisioning', 'provisioning', 'node_name', resp.node_name)
+
+	-- a node without a name of its own is just called after its location
+	local should_hostname = resp.location_name
+	if resp.location_name and resp.node_name then
+		should_hostname = resp.location_name .. '-' .. resp.node_name
+	elseif resp.node_name then
+		should_hostname = resp.node_name
+	end
+
+	if should_hostname and should_hostname ~= pretty_hostname.get(uci) then
+		print('Renaming node to ' .. should_hostname)
+		pretty_hostname.set(uci, should_hostname)
+		uci:save('system')
+	end
+
+	local has_changes = false
+
+	-- Use this when changing something that needs a reload (not the hostname)
+	local function set(a, b, c, d, isbool)
+		local curval
+
+		if isbool then
+			curval = uci:get_bool(a, b, c)
+		else
+			curval = uci:get(a, b, c)
+		end
+
+		if curval ~= d then
+			uci:set(a, b, c, d)
+			print('  Value', a, b, c, 'changed to', tostring(d), 'was', tostring(curval))
+			has_changes = true
+		else
+			print('  Value', a, b, c, 'unchanged', tostring(d))
+		end
+	end
+
+	if resp.contact then
+		local owner = uci:get_first('gluon-node-info', 'owner')
+		uci:set('gluon-node-info', owner, 'contact', resp.contact)
+	end
+
+	if resp.latitude and resp.longitude then
+		local location = uci:get_first('gluon-node-info', 'location')
+		uci:set('gluon-node-info', location, 'share_location', '1')
+		uci:set('gluon-node-info', location, 'latitude', resp.latitude)
+		uci:set('gluon-node-info', location, 'longitude', resp.longitude)
+	end
+
+	-- a provisioned mesh_vpn address means the node is supposed to tunnel
+	local has_tunnel = type(resp.interfaces.mesh_vpn) == 'table' and resp.interfaces.mesh_vpn.ip ~= nil
+	print('Syncing mesh vpn: ' .. (has_tunnel and 'on' or 'off'))
+	set('gluon', 'mesh_vpn', 'enabled', has_tunnel, true)
+
+	for name, req in pairs(want) do
+		local got = resp.interfaces[name]
+		local option = req.requested_type == 6 and 'ip6' or 'ip4'
+
+		if type(got) ~= 'table' or not got.ip then
+			printf('  %s: not provisioned', name)
+		else
+			local addr = ip.new(got.ip)
+
+			if not addr or (req.requested_type == 6) ~= addr:is6() then
+				printf('E: %s: invalid IPv%i address %s', name, req.requested_type, tostring(got.ip))
+			else
+				local cidr = addr:string()
+				local current = uci:get('gluon-static-ip', name, option)
+
+				if current ~= cidr then
+					printf('  %s: %s changed to %s, was %s', name, option, cidr, current or '[unset]')
+					uci:set('gluon-static-ip', name, option, cidr)
+					has_changes = true
+				else
+					printf('  %s: %s unchanged (%s)', name, option, cidr)
+				end
+			end
+		end
+	end
+
+	uci:save('gluon')
+	uci:save('gluon-static-ip')
+	uci:save('gluon-provisioning')
+	uci:save('gluon-node-info')
+	os.execute('exec uci commit')
+
+	if has_changes then
+		print('Applying changes...')
+		os.execute('exec gluon-reconfigure')
+		os.execute('exec gluon-reload')
+	else
+		print('No settings changes, no reason to reload')
+	end
+
+	return 0
+end
+
+local function maybe_provision()
+	if uci:get_bool('gluon-provisioning', 'provisioning', 'enabled') then
+		do_provision()
+	else
+		print('gluon-provisioning not enabled, skipping')
+	end
+end
+
+local function enable_provisioning(token)
+	if not uci:get('gluon-provisioning', 'provisioning', 'token') and not token then
+		cmd_err('requires a token (no token was found in config)', true)
+	end
+
+	if token then
+		print('Config token')
+		uci:set('gluon-provisioning', 'provisioning', 'token', token)
+	end
+
+	if not uci:get_bool('gluon-provisioning', 'provisioning', 'enabled') then
+		uci:set('gluon-provisioning', 'provisioning', 'enabled', true)
+		print('Enabled provisioning.')
+		print('Trigger with: $ gluon-provisioning provision')
+	else
+		print('Provisioning already enabled.')
+	end
+
+	uci:save('gluon-provisioning')
+end
+
+local function disable_provisioning()
+	if uci:get_bool('gluon-provisioning', 'provisioning', 'enabled') then
+		uci:set('gluon-provisioning', 'provisioning', 'enabled', false)
+		print('Disabled provisioning.')
+		uci:save('gluon-provisioning')
+	end
+end
+
+local function show_info()
+	local token = uci:get('gluon-provisioning', 'provisioning', 'token')
+
+	tprint({
+		enabled = uci:get_bool('gluon-provisioning', 'provisioning', 'enabled'),
+		token = token and (token:sub(1, 4) .. '...') or '[none]',
+		location_name = uci:get('gluon-provisioning', 'provisioning', 'location_name') or '[unknown]',
+		node_name = uci:get('gluon-provisioning', 'provisioning', 'node_name') or '[unknown]',
+		primary_mac = sysconfig.primary_mac,
+		node_id = util.node_id(),
+	})
+end
+
+sub = {
+	info = { show_info, 'Show gluon-provisioning configuration.' },
+	help = { show_help, 'Show help.' },
+	provision = { maybe_provision, 'Trigger provisioning.' },
+	force_provision = { do_provision, 'Trigger provisioning, despite being disabled.' },
+	enable = { enable_provisioning, 'Enable provisioning. [<token>]' },
+	disable = { disable_provisioning, 'Disable provisioning.' }
+}
+
+exec_cmd(table.slice(arg), sub)

@@ -1,0 +1,5 @@
+package gluon-provisioning
+
+config provisioning 'provisioning'
+	option enabled '0'
+	option token ''
