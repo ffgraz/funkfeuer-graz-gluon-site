@@ -139,33 +139,33 @@ end
 local function requested_interfaces()
 	local want = {}
 
-	local function want_iface(name, family, macaddr)
-		want[name] = { requested_type = family, mac = macaddr }
+	local function want_iface(name, family, itype, macaddr)
+		want[name] = { requested_type = family, type = itype, mac = macaddr }
 	end
 
-	local function want_mesh(name, macaddr)
+	local function want_mesh(name, itype, macaddr)
 		if not uci:get('network', name, 'proto') then return end
 		if uci:get_bool('network', name, 'disabled') then return end
-		want_iface(name, 4, macaddr)
+		want_iface(name, 4, itype, macaddr)
 	end
 
-	want_iface('loopback', 6, uci:get('network', 'loopback', 'macaddr'))
+	want_iface('loopback', 6, 'loopback', uci:get('network', 'loopback', 'macaddr'))
 
 	wireless.foreach_radio(uci, function(radio, _, _)
 		for _, prefix in ipairs({ 'mesh_', 'p2p_', 'ibss_' }) do
 			local name = prefix .. radio['.name']
 			if not uci:get_bool('wireless', name, 'disabled') then
-				want_mesh(name, uci:get('wireless', name, 'macaddr'))
+				want_mesh(name, 'wifi', uci:get('wireless', name, 'macaddr'))
 			end
 		end
 	end)
 
 	-- asked for even when the mesh VPN is currently off: whether the server
 	-- provisions it is what decides if we turn it on
-	want_mesh('mesh_vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
+	want_mesh('mesh_vpn', 'vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
 
-	want_mesh('mesh_uplink', uci:get('network', 'mesh_uplink', 'macaddr'))
-	want_mesh('mesh_other', uci:get('network', 'mesh_other', 'macaddr'))
+	want_mesh('mesh_uplink', 'ethernet', uci:get('network', 'mesh_uplink', 'macaddr'))
+	want_mesh('mesh_other', 'ethernet', uci:get('network', 'mesh_other', 'macaddr'))
 
 	return want
 end
