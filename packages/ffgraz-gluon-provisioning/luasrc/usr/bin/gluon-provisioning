@@ -9,7 +9,10 @@ local sysconfig = require 'gluon.sysconfig'
 local wireless = require 'gluon.wireless'
 local pretty_hostname = require 'pretty_hostname'
 
-local api = site.provisioning.api()
+-- GLUON_PROVISIONING_API points the node at a single server instead of the
+-- site's, so a test (or a hand-run against a local server) needs no rebuild
+local api = os.getenv('GLUON_PROVISIONING_API')
+api = api and { api } or site.provisioning.api()
 
 -- CLI lib from olsrd-cli (TODO: move to it's own lib package)
 -- DO NOT EDIT HERE, JUST COPY FROM THERE
@@ -56,7 +59,7 @@ local function exec_cmd(args, sub)
 		if cmd[3] ~= nil and #args > 1 then
 			exec_cmd(table.slice(args, 2), cmd[3])
 		else
-			cmd[1](unpack(table.slice(args, 2)))
+			os.exit(cmd[1](unpack(table.slice(args, 2))) or 0)
 		end
 	end
 end
@@ -314,10 +317,10 @@ end
 
 local function maybe_provision()
 	if uci:get_bool('gluon-provisioning', 'provisioning', 'enabled') then
-		do_provision()
-	else
-		print('gluon-provisioning not enabled, skipping')
+		return do_provision()
 	end
+
+	print('gluon-provisioning not enabled, skipping')
 end
 
 local function enable_provisioning(token)
