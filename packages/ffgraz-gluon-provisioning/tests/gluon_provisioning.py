@@ -23,6 +23,13 @@ from provisioning_server import ProvisioningServer  # noqa: E402
 HOST = os.environ.get('GLUON_TEST_HOST_ADDR', '10.0.2.2')
 
 
+def has_device(node, name):
+    """Whether netifd has an actual device for this interface."""
+    status, _ = node.execute(
+        'ubus call network.interface.%s status | grep -q l3_device' % name)
+    return status == 0
+
+
 def node_info(node, section, option):
     """Read an option from gluon-node-info's anonymous sections."""
     return node.succeed(
@@ -140,8 +147,11 @@ try:
             raise AssertionError('%s: uci holds %r, expected %r'
                                  % (name, stored, expected))
 
-        # applied to the running system, not merely stored
-        a.wait_until_succeeds("ip addr show | grep -qF '%s'" % expected, 60)
+        # applied to the running system, not merely stored - but an
+        # interface with no device, the mesh VPN while it is off, has
+        # nowhere to put the address until it comes up
+        if has_device(a, name):
+            a.wait_until_succeeds("ip addr show | grep -qF '%s'" % expected, 60)
 
     # pretty_hostname.set only keeps a pretty_hostname when it differs from
     # the hostname it sanitises down to, so read it back the way the library's
