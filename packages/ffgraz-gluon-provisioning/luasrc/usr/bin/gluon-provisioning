@@ -324,7 +324,13 @@ local function do_provision()
 			if not addr or (req.requested_type == 6) ~= addr:is6() then
 				printf('E: %s: invalid IPv%i address %s', name, req.requested_type, tostring(got.ip))
 			else
-				local cidr = addr:string()
+				-- the loopback carries a single host address: 310-static-ip
+				-- derives it as one, netifd puts it on lo as /128, and
+				-- ffgraz-migrations deletes a loopback entry that carries a
+				-- prefix length. The server's prefix describes its pool, not
+				-- our mask, so drop it. A mesh address keeps its prefix - the
+				-- interface needs the netmask.
+				local cidr = (req.type == 'loopback' and addr:host() or addr):string()
 				local current = uci:get('gluon-static-ip', name, option)
 
 				if current ~= cidr then
