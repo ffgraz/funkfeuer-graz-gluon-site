@@ -12,6 +12,25 @@ configured with.
 
 Requests are made with `uclient-fetch`, so the node needs no HTTP client library.
 
+Setting `GLUON_PROVISIONING_API` in the environment replaces the site's mirror
+list with that one server, for testing against a local one:
+
+```sh
+GLUON_PROVISIONING_API=http://10.0.2.2:8080 gluon-provisioning force_provision
+```
+
+`tests/lib/provisioning_server.py` is a runnable sample server (stdlib only)
+that hands out a random token and random node info, and prints the uci commands
+to point a node at it:
+
+```sh
+python3 tests/lib/provisioning_server.py --port 8080
+```
+
+`tests/gluon_provisioning.py` drives the whole flow against it on a booted
+node; `tests/provision_test.lua` checks the response handling on its own
+(`lua tests/provision_test.lua`, no node needed).
+
 ## POST /provision
 
 ### Request
@@ -110,5 +129,7 @@ committed. `ffgraz-static-ip` picks it up from there on the next
 `gluon-reconfigure`, which the node runs — followed by `gluon-reload` — only if
 something actually changed.
 
-An HTTP error, an unreachable mirror or a non-JSON body makes the node move on
-to the next mirror; if none answer, nothing is changed.
+Errors are in-band: a rejected token or an unknown node is an HTTP 200 carrying
+`{"ok": false, "error": "..."}`, which the node reports and stops on. An HTTP
+error status, an unreachable mirror or a non-JSON body instead makes the node
+move on to the next mirror; if none answer, nothing is changed.

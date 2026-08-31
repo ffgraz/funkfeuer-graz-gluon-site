@@ -137,15 +137,25 @@ end
 
 -- run ------------------------------------------------------------------
 
+-- the script exits with the command's status; exec_cmd is its last
+-- statement, so returning from a stubbed exit is the same as falling off
+-- the end
+local real_exit, exit_code = os.exit
+os.exit = function(code) exit_code = code end -- luacheck: ignore
+
 arg = { [0] = 'gluon-provisioning', 'force_provision' }
 assert(loadfile(script))()
+
 os.execute = real_execute -- luacheck: ignore
+os.exit = real_exit -- luacheck: ignore
 
 -- assert ---------------------------------------------------------------
 
 local function eq(got, want, what)
 	assert(got == want, string.format('%s: got %s, want %s', what, tostring(got), tostring(want)))
 end
+
+eq(exit_code, 0, 'exit status')
 
 local request = assert(commands[1], 'no request was made')
 assert(request:match("Authorization: Bearer tok3n"), 'token is not sent as bearer auth')
