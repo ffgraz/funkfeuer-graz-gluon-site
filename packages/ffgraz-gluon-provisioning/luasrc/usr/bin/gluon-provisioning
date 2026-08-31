@@ -174,6 +174,16 @@ local function interfaces_with_device()
 	return have
 end
 
+-- Interfaces to ask for even when netifd has no device for them.
+--
+-- The mesh VPN is the bootstrap case: while it is off there is no device to
+-- report, and it is the server's answer that decides whether we turn it on at
+-- all. Requiring a device first would mean a node whose VPN is down could
+-- never be given one.
+local NO_DEVICE_NEEDED = {
+	mesh_vpn = true,
+}
+
 -- The interfaces we want addresses for: every mesh interface that is actually
 -- in use asks for IPv4, the loopback carries our IPv6 node address.
 local function requested_interfaces()
@@ -181,7 +191,7 @@ local function requested_interfaces()
 	local have = interfaces_with_device()
 
 	local function want_iface(name, family, itype, macaddr)
-		if have and not have[name] then return end
+		if have and not have[name] and not NO_DEVICE_NEEDED[name] then return end
 		want[name] = { requested_type = family, type = itype, mac = macaddr }
 	end
 
@@ -202,9 +212,8 @@ local function requested_interfaces()
 		end
 	end)
 
-	-- only once the VPN is actually up: while it is off there is no device to
-	-- put the address on. Whether the server provisions it still decides
-	-- whether the VPN stays on.
+	-- asked for even when the mesh VPN is currently off: whether the server
+	-- provisions it is what decides if we turn it on (see NO_DEVICE_NEEDED)
 	want_mesh('mesh_vpn', 'vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
 
 	want_mesh('mesh_uplink', 'ethernet', uci:get('network', 'mesh_uplink', 'macaddr'))

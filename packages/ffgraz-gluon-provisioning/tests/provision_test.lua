@@ -28,14 +28,15 @@ local RESPONSE_TABLE = {
 	},
 }
 
--- what netifd reports: everything the node may ask for has a device, except
--- mesh_vpn, which is configured but down
+-- what netifd reports: a device for the interfaces that are up, none for
+-- ibss_radio0 and mesh_vpn, which are configured but down
 local UBUS_DUMP = 'ubus dump'
 local UBUS_TABLE = {
 	interface = {
 		{ interface = 'loopback', l3_device = 'lo' },
 		{ interface = 'mesh_radio0', l3_device = 'wlan0' },
 		{ interface = 'mesh_uplink', l3_device = 'm_uplink' },
+		{ interface = 'ibss_radio0' },
 		{ interface = 'mesh_vpn' },
 	},
 }
@@ -53,6 +54,8 @@ local config = {
 		mesh_uplink = { proto = 'static' },
 		mesh_other = { proto = 'static', disabled = '1' },
 		-- configured and enabled, but netifd has no device for it
+		ibss_radio0 = { proto = 'static' },
+		-- no device either, but exempt: the vpn is asked for regardless
 		mesh_vpn = { proto = 'static' },
 	},
 	['wireless'] = { mesh_radio0 = { macaddr = 'e2:1a:c1:00:11:24' } },
@@ -198,7 +201,10 @@ eq(sent.interfaces.mesh_radio0.type, 'wifi', 'wifi type')
 eq(sent.interfaces.mesh_radio0.mac, 'e2:1a:c1:00:11:24', 'wifi mac')
 eq(sent.interfaces.mesh_uplink.type, 'ethernet', 'ethernet type')
 eq(sent.interfaces.mesh_other, nil, 'disabled interface is not requested')
-eq(sent.interfaces.mesh_vpn, nil, 'interface without a device is not requested')
+eq(sent.interfaces.ibss_radio0, nil, 'interface without a device is not requested')
+assert(sent.interfaces.mesh_vpn, 'the mesh vpn is asked for even with no device')
+eq(sent.interfaces.mesh_vpn.requested_type, 4, 'mesh vpn asks for v4')
+eq(sent.interfaces.mesh_vpn.type, 'vpn', 'mesh vpn type')
 
 eq(cursor:get('gluon-static-ip', 'mesh_radio0', 'ip4'), '10.12.34.56/16', 'mesh v4 address')
 eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'), '2001:470:75c5:23::42',
