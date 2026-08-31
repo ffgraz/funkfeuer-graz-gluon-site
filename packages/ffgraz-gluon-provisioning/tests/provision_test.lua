@@ -89,15 +89,21 @@ package.preload['simple-uci'] = function()
 end
 
 package.preload['luci.ip'] = function()
+	local function cidr(addr, len)
+		local v6 = addr:find(':') ~= nil
+		return {
+			is6 = function() return v6 end,
+			-- a host address is the address on its own
+			host = function() return cidr(addr, '') end,
+			string = function() return addr .. (len ~= '' and ('/' .. len) or '') end,
+		}
+	end
+
 	return {
 		new = function(str)
 			local addr, len = str:match('^([^/]+)/?(%d*)$')
 			if not addr then return nil end
-			local v6 = addr:find(':') ~= nil
-			return {
-				is6 = function() return v6 end,
-				string = function() return addr .. (len ~= '' and ('/' .. len) or '') end,
-			}
+			return cidr(addr, len)
 		end,
 	}
 end
@@ -195,7 +201,8 @@ eq(sent.interfaces.mesh_other, nil, 'disabled interface is not requested')
 eq(sent.interfaces.mesh_vpn, nil, 'interface without a device is not requested')
 
 eq(cursor:get('gluon-static-ip', 'mesh_radio0', 'ip4'), '10.12.34.56/16', 'mesh v4 address')
-eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'), '2001:470:75c5:23::42/64', 'loopback v6 address')
+eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'), '2001:470:75c5:23::42',
+	'loopback v6 address is stored without the pool prefix')
 eq(cursor:get('gluon-static-ip', 'mesh_uplink', 'ip4'), nil, 'v6 answer to a v4 request must be rejected')
 eq(cursor:get('gluon-static-ip', 'mesh_other', 'ip4'), nil, 'disabled interface must not be provisioned')
 

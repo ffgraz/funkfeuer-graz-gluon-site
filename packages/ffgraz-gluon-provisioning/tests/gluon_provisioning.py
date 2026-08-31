@@ -130,13 +130,18 @@ try:
         assigned = server.address(name, family)
         option = 'ip6' if family == 6 else 'ip4'
 
+        # the loopback holds a single host address, so the pool prefix the
+        # server answers with is not part of what the node stores
+        expected = assigned.split('/')[0] if want['type'] == 'loopback' \
+            else assigned
+
         stored = a.succeed('uci get gluon-static-ip.%s.%s' % (name, option))
-        if stored != assigned:
-            raise AssertionError('%s: uci holds %r, server assigned %r'
-                                 % (name, stored, assigned))
+        if stored != expected:
+            raise AssertionError('%s: uci holds %r, expected %r'
+                                 % (name, stored, expected))
 
         # applied to the running system, not merely stored
-        a.wait_until_succeeds("ip addr show | grep -qF '%s'" % assigned, 60)
+        a.wait_until_succeeds("ip addr show | grep -qF '%s'" % expected, 60)
 
     hostname = a.succeed('uci get system.@system[0].pretty_hostname')
     expected = '%s-%s' % (server.location_name, server.node_name)
