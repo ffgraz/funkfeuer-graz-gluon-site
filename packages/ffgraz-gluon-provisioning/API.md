@@ -30,10 +30,10 @@ Body:
   "primary_mac": "e2:1a:c1:00:11:22",
   "node_id": "e21ac1001122",
   "interfaces": {
-    "loopback":     { "requested_type": 6 },
-    "mesh_radio0":  { "requested_type": 4, "mac": "e2:1a:c1:00:11:24" },
-    "mesh_uplink":  { "requested_type": 4, "mac": "e2:1a:c1:00:11:2a" },
-    "mesh_vpn":     { "requested_type": 4, "mac": "e2:1a:c1:00:11:27" }
+    "loopback":     { "requested_type": 6, "type": "loopback" },
+    "mesh_radio0":  { "requested_type": 4, "type": "wifi",     "mac": "e2:1a:c1:00:11:24" },
+    "mesh_uplink":  { "requested_type": 4, "type": "ethernet", "mac": "e2:1a:c1:00:11:2a" },
+    "mesh_vpn":     { "requested_type": 4, "type": "vpn",      "mac": "e2:1a:c1:00:11:27" }
   }
 }
 ```
@@ -44,16 +44,19 @@ Body:
 | `node_id` | `primary_mac` without the colons — Gluon's node id. |
 | `interfaces` | The interfaces the node wants an address for, keyed by the Gluon network/UCI interface name. |
 | `interfaces.*.requested_type` | `4` or `6` — the address family requested for that interface. |
+| `interfaces.*.type` | What the interface is: `wifi`, `ethernet`, `vpn` or `loopback`. |
 | `interfaces.*.mac` | The interface's MAC, when it has one. Omitted otherwise. |
 
 Which interfaces are sent:
 
-* `loopback` — always, `requested_type: 6`. This is the node's IPv6 address.
+* `loopback` — always, `requested_type: 6`, type `loopback`. This is the node's
+  IPv6 address.
 * every mesh interface that exists and is not disabled — `requested_type: 4`.
   That is `mesh_<radio>`, `p2p_<radio>` and `ibss_<radio>` for each enabled
-  radio, plus `mesh_uplink` and `mesh_other`.
-* `mesh_vpn`, whenever the interface exists — also when the mesh VPN is
-  currently off, because the answer is what decides whether it gets turned on.
+  radio (type `wifi`), plus `mesh_uplink` and `mesh_other` (type `ethernet`).
+* `mesh_vpn` (type `vpn`), whenever the interface exists — also when the mesh
+  VPN is currently off, because the answer is what decides whether it gets
+  turned on.
 
 A server may answer for a subset; interfaces it omits are left untouched.
 
