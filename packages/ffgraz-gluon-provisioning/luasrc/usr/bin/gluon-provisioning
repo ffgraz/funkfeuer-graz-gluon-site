@@ -137,12 +137,51 @@ local function post_json(url, token, body)
 	return resp
 end
 
+-- The interfaces netifd has an actual device for, as a set of names.
+--
+-- Being configured is not the same as existing: a mesh VPN that is not up and
+-- a wired mesh on a port this hardware does not have are both in the network
+-- config, and netifd reports them without an l3_device. An address
+-- provisioned for one of those is stored in uci and never reaches the kernel,
+-- so there is no point asking for it.
+--
+-- Returns nil if netifd cannot be asked, which means "do not filter" - losing
+-- the ubus call should not turn provisioning into a no-op.
+local function interfaces_with_device()
+	local out = os.tmpname()
+
+	local ok = os.execute('ubus call network.interface dump > '
+		.. shellquote(out) .. ' 2>/dev/null') == 0
+
+	local f = io.open(out)
+	local raw = f and f:read('*a') or ''
+	if f then f:close() end
+	os.remove(out)
+
+	local dump = ok and json.parse(raw) or nil
+	if type(dump) ~= 'table' or type(dump.interface) ~= 'table' then
+		print('W: could not ask netifd which interfaces exist')
+		return nil
+	end
+
+	local have = {}
+	for _, iface in ipairs(dump.interface) do
+		if iface.l3_device then
+			have[iface.interface] = true
+		end
+	end
+
+	return have
+end
+
 -- The interfaces we want addresses for: every mesh interface that is actually
 -- in use asks for IPv4, the loopback carries our IPv6 node address.
 local function requested_interfaces()
 	local want = {}
+	local have = interfaces_with_device()
 
 	local function want_iface(name, family, itype, macaddr)
+		if have and not have[name] then return end
 		want[name] = { requested_type = family, type = itype, mac = macaddr }
 	end
 
@@ -163,8 +202,9 @@ local function requested_interfaces()
 		end
 	end)
 
-	-- asked for even when the mesh VPN is currently off: whether the server
-	-- provisions it is what decides if we turn it on
+	-- only once the VPN is actually up: while it is off there is no device to
+	-- put the address on. Whether the server provisions it still decides
+	-- whether the VPN stays on.
 	want_mesh('mesh_vpn', 'vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
 
 	want_mesh('mesh_uplink', 'ethernet', uci:get('network', 'mesh_uplink', 'macaddr'))
