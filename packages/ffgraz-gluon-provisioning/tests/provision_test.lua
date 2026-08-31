@@ -28,6 +28,18 @@ local RESPONSE_TABLE = {
 	},
 }
 
+-- what netifd reports: everything the node may ask for has a device, except
+-- mesh_vpn, which is configured but down
+local UBUS_DUMP = 'ubus dump'
+local UBUS_TABLE = {
+	interface = {
+		{ interface = 'loopback', l3_device = 'lo' },
+		{ interface = 'mesh_radio0', l3_device = 'wlan0' },
+		{ interface = 'mesh_uplink', l3_device = 'm_uplink' },
+		{ interface = 'mesh_vpn' },
+	},
+}
+
 -- uci ------------------------------------------------------------------
 
 local config = {
@@ -40,6 +52,8 @@ local config = {
 		mesh_radio0 = { proto = 'static' },
 		mesh_uplink = { proto = 'static' },
 		mesh_other = { proto = 'static', disabled = '1' },
+		-- configured and enabled, but netifd has no device for it
+		mesh_vpn = { proto = 'static' },
 	},
 	['wireless'] = { mesh_radio0 = { macaddr = 'e2:1a:c1:00:11:24' } },
 }
@@ -92,7 +106,10 @@ local sent -- the request table, captured instead of encoded
 package.preload['luci.jsonc'] = function()
 	return {
 		stringify = function(t) sent = t; return RESPONSE end,
-		parse = function(_) return RESPONSE_TABLE end,
+		parse = function(raw)
+			if raw == UBUS_DUMP then return UBUS_TABLE end
+			return RESPONSE_TABLE
+		end,
 	}
 end
 
@@ -127,9 +144,10 @@ local commands = {}
 os.execute = function(cmd) -- luacheck: ignore
 	table.insert(commands, cmd)
 	local out = cmd:match("uclient%-fetch.* %-O '([^']+)'")
-	if out then
-		local f = io.open(out, 'w')
-		f:write(RESPONSE)
+	local dump = cmd:match("^ubus call network%.interface dump > '([^']+)'")
+	if out or dump then
+		local f = io.open(out or dump, 'w')
+		f:write(out and RESPONSE or UBUS_DUMP)
 		f:close()
 	end
 	return 0
@@ -157,7 +175,11 @@ end
 
 eq(exit_code, 0, 'exit status')
 
-local request = assert(commands[1], 'no request was made')
+local request
+for _, c in ipairs(commands) do
+	if c:match('uclient%-fetch') then request = c end
+end
+assert(request, 'no request was made')
 assert(request:match("Authorization: Bearer tok3n"), 'token is not sent as bearer auth')
 assert(request:match('/provision'), 'wrong endpoint: ' .. request)
 
@@ -170,6 +192,7 @@ eq(sent.interfaces.mesh_radio0.type, 'wifi', 'wifi type')
 eq(sent.interfaces.mesh_radio0.mac, 'e2:1a:c1:00:11:24', 'wifi mac')
 eq(sent.interfaces.mesh_uplink.type, 'ethernet', 'ethernet type')
 eq(sent.interfaces.mesh_other, nil, 'disabled interface is not requested')
+eq(sent.interfaces.mesh_vpn, nil, 'interface without a device is not requested')
 
 eq(cursor:get('gluon-static-ip', 'mesh_radio0', 'ip4'), '10.12.34.56/16', 'mesh v4 address')
 eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'), '2001:470:75c5:23::42/64', 'loopback v6 address')
