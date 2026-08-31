@@ -143,7 +143,12 @@ try:
         # applied to the running system, not merely stored
         a.wait_until_succeeds("ip addr show | grep -qF '%s'" % expected, 60)
 
-    hostname = a.succeed('uci get system.@system[0].pretty_hostname')
+    # pretty_hostname.set only keeps a pretty_hostname when it differs from
+    # the hostname it sanitises down to, so read it back the way the library's
+    # own get() does
+    status, hostname = a.execute('uci get system.@system[0].pretty_hostname')
+    if status != 0:
+        hostname = a.succeed('uci get system.@system[0].hostname')
     expected = '%s-%s' % (server.location_name, server.node_name)
     if hostname != expected:
         raise AssertionError('hostname is %r, expected %r' % (hostname, expected))
