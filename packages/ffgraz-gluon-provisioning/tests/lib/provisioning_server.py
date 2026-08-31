@@ -131,13 +131,35 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self._reply(200, {'ok': True, 'endpoints': ['POST /provision']})
 
+    def _read_body(self):
+        """The request body, however the client framed it.
+
+        uclient-fetch sends --post-data chunked, which
+        BaseHTTPRequestHandler does not decode on its own: it would
+        read Content-Length (absent, so nothing) and then choke on the
+        chunk header as if it were the next request."""
+        if 'chunked' in (self.headers.get('Transfer-Encoding') or '').lower():
+            chunks = []
+            while True:
+                size = int(self.rfile.readline().split(b';')[0] or b'0', 16)
+                if size == 0:
+                    break
+                chunks.append(self.rfile.read(size))
+                self.rfile.read(2)  # CRLF after the chunk
+            while True:  # trailers, then the final empty line
+                line = self.rfile.readline()
+                if not line or line in (b'\r\n', b'\n'):
+                    break
+            return b''.join(chunks)
+
+        return self.rfile.read(int(self.headers.get('Content-Length') or 0))
+
     def do_POST(self):
         if self.path.rstrip('/') != '/provision':
             self._reply(404, {'ok': False, 'error': 'no such endpoint'})
             return
 
-        length = int(self.headers.get('Content-Length') or 0)
-        raw = self.rfile.read(length)
+        raw = self._read_body()
 
         try:
             request = json.loads(raw)
