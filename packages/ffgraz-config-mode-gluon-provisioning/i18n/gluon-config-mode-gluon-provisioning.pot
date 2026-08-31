@@ -1,0 +1,14 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "Enable provisioning"
+msgstr ""
+
+msgid "Provisioning token"
+msgstr ""
+
+msgid ""
+"Provision this node by entering the token you were given.<br>"
+"This will automatically keep the node addresses in sync with "
+"the values assigned by the provisioning server."
+msgstr ""

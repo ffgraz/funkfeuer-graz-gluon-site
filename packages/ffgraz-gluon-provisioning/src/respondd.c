@@ -34,17 +34,17 @@
 #include <string.h>
 
 
-static struct json_object * get_manman(void) {
+static struct json_object * get_provisioning(void) {
 	struct uci_context *ctx = uci_alloc_context();
 	if (!ctx)
 		return NULL;
 	ctx->flags &= ~UCI_FLAG_STRICT;
 
 	struct uci_package *p;
-	if (uci_load(ctx, "gluon-manman-sync", &p))
+	if (uci_load(ctx, "gluon-provisioning", &p))
 		goto error;
 
-	struct uci_section *s = uci_lookup_section(ctx, p, "sync");
+	struct uci_section *s = uci_lookup_section(ctx, p, "provisioning");
 	if (!s)
 		goto error;
 
@@ -55,10 +55,8 @@ static struct json_object * get_manman(void) {
 	json_object_object_add(ret, "enabled", json_object_new_boolean(enabled));
 
 	if (enabled) {
-		json_object_object_add(ret, "location", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location")));
-		json_object_object_add(ret, "location_id", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location_id")));
-		json_object_object_add(ret, "node", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "node")));
-		json_object_object_add(ret, "node_id", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "node_id")));
+		json_object_object_add(ret, "location_name", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "location_name")));
+		json_object_object_add(ret, "node_name", gluonutil_wrap_string(uci_lookup_option_string(ctx, s, "node_name")));
 	}
 
 	uci_free_context(ctx);
@@ -72,7 +70,7 @@ static struct json_object * get_manman(void) {
 
 static struct json_object * respondd_provider_nodeinfo(void) {
 	struct json_object *ret = json_object_new_object();
-	json_object_object_add(ret, "manman", get_manman());
+	json_object_object_add(ret, "provisioning", get_provisioning());
 
 	return ret;
 }
