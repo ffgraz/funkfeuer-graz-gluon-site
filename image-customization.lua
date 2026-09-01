@@ -5,7 +5,6 @@ features {
 	'logging',
 	'autoupdater',
 	'mesh-babel',
-	'mesh-olsrd',
 	'respondd',
 	'status-page',
 	'web-advanced',
@@ -28,11 +27,20 @@ packages {
 	'ffgraz-ddhcpd',
 	'ffgraz-monitor-and-reboot',
 	'ffgraz-blink',
-	'ffgraz-olsr-auto-restart',
 	'ffda-gluon-usteer',
 	'ffac-weeklyreboot',
 	'ffac-ssid-changer',
 }
+
+-- The 8M devices have no room for olsr on top of babel once the rest of the
+-- image is in, so they mesh with babel alone. Everything else keeps both.
+if not device_class('tiny') then
+	features {'mesh-olsrd'}
+
+	packages {
+		'ffgraz-olsr-auto-restart',
+	}
+end
 
 if device_class('standard') then
 	packages {
