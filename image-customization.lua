@@ -32,14 +32,22 @@ packages {
 	'ffac-ssid-changer',
 }
 
--- The 8M devices have no room for olsr on top of babel once the rest of the
--- image is in, so they mesh with babel alone. Everything else keeps both.
-if not device_class('tiny') then
+-- The small-flash devices have no room for olsr on top of babel once the rest
+-- of the image is in, so they mesh with babel alone. Everything else keeps
+-- both.
+if not (device_class('tiny') or device_class('p2p-tiny')) then
 	features {'mesh-olsrd'}
 
 	packages {
 		'ffgraz-olsr-auto-restart',
 	}
+end
+
+-- p2p-tiny is a p2p device on small flash: it needs to mesh point to point,
+-- but the tp-link safeloader models cap the filesystem partition well below
+-- their nominal flash size, so it gets none of the p2p diagnostic extras.
+if device_class('p2p') or device_class('p2p-tiny') then
+	features {'p2p-support'}
 end
 
 if device_class('standard') then
@@ -51,8 +59,6 @@ if device_class('standard') then
 end
 
 if device_class('p2p') then
-	features {'p2p-support'}
-
 	packages {
 		'iwinfo', 'mtr-nojson', 'iperf3',
 		'ffgraz-config-mode-at-runtime', 'ffgraz-config-mode-remote',
