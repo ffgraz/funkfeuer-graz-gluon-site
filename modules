@@ -8,7 +8,7 @@ PACKAGES_LUCI_BRANCH=openwrt-25.12
 PACKAGES_LUCI_COMMIT=42d72f79cd8f057f241595abc761b39dab2d9f07
 
 PACKAGES_CM_REPO=https://github.com/freifunk-gluon/community-packages.git
-PACKAGES_CM_COMMIT=5aadab01f9a3644bd3aa76144cd79585d3aa1ac3
+PACKAGES_CM_COMMIT=b8a92b4ef3b2fb13d0a265402b3abf69dc867410
 PACKAGES_CM_BRANCH=funkfeuer
 
 # ffgraz fork of the gluon package feed: it is upstream plus the respondd
