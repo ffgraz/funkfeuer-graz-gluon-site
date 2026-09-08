@@ -15,40 +15,10 @@
     "downtime_until_restart": 600,
     "attempts_until_reboot": 15
   },
-  "ddhcpd": {
-    "adapter": {
-      "type": "procd",
-      "param": "ddhcpd"
-    },
-    "restart": [
-      "service dnsmasq stop",
-      "service ddhcpd stop",
-      "service dnsmasq start",
-      "service ddhcpd start"
-    ],
-    "downtime_until_restart": 10,
-    "attempts_until_reboot": 5
-  },
-  "ddhcpd-socket": {
-    "adapter": {
-      "type": "socket",
-      "param": {
-        "socket": "/tmp/ddhcpd_ctl"
-      }
-    },
-    "restart": [
-      "service dnsmasq stop",
-      "service ddhcpd stop",
-      "service dnsmasq start",
-      "service ddhcpd start"
-    ],
-    "downtime_until_restart": 10,
-    "attempts_until_reboot": 5
-  },
   "mmfd": {
     "adapter": {
       "type": "procd",
-      "param": "ddhcpd"
+      "param": "mmfd"
     },
     "downtime_until_restart": 20,
     "attempts_until_reboot": 3
