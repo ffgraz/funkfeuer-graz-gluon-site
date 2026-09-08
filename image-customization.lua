@@ -19,6 +19,9 @@ features {
 packages {
 	'-batman-adv',
 	'ffgraz-static-ip', 'ffgraz-web-static-ip',
+	'ffgraz-l3routes', 'ffgraz-web-l3routes',
+	'ffgraz-l3routes-babel',
+	'ffgraz-olsr-public-ip', 'ffgraz-web-olsr-public-ip',
 	'ffgraz-gluon-provisioning', 'ffgraz-config-mode-gluon-provisioning',
 	'ffgraz-config-mode-theme-funkfeuer', '-gluon-config-mode-theme',
 	'ffgraz-private-ap', 'ffgraz-web-private-ap',
@@ -40,6 +43,7 @@ if not (device_class('tiny') or device_class('p2p-tiny')) then
 
 	packages {
 		'ffgraz-olsr-auto-restart',
+		'ffgraz-l3routes-olsr',
 	}
 end
 
