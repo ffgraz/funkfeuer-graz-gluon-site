@@ -24,6 +24,7 @@ packages {
 	'ffgraz-olsr-public-ip', 'ffgraz-web-olsr-public-ip',
 	'ffgraz-gluon-provisioning', 'ffgraz-config-mode-gluon-provisioning',
 	'ffgraz-config-mode-theme-funkfeuer', '-gluon-config-mode-theme',
+	'ffgraz-private-net', 'ffgraz-web-private-net',
 	'ffgraz-private-ap', 'ffgraz-web-private-ap',
 	'ffgraz-migrations',
 	'ffgraz-ddhcpd-nextnode',
