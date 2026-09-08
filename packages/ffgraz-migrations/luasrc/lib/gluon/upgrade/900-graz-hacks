@@ -2,16 +2,20 @@
 
 local uci = require('simple-uci').cursor()
 
--- use ff dns and ignore dnsmasq on ap for now
+-- use ff dns and keep dnsmasq to the private network for now
 
-uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'ap' })
+-- the network this names used to be called 'ap'; dnsmasq binds to what is
+-- listed here and nothing else, so a name no interface has any more leaves the
+-- private network without DHCP or DNS
+uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'private' })
 -- uci:delete('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface')
 
 -- The DNS server handed to clients has to be the option payload: the
 -- three argument form of set() would set the section type instead,
 -- leaving 500-ddhcpd-option-nextnode's payload of the next-node
--- address in place. dnsmasq is bound to 'ap' above, so nothing answers
--- on the next-node address and clients end up without working DNS.
+-- address in place. dnsmasq is bound to the private network above, so
+-- nothing answers on the next-node address and clients end up without
+-- working DNS.
 uci:set('ddhcpd', 'nextnode_dns', 'payload', '10.12.0.10')
 
 uci:save('dhcp')
