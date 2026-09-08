@@ -4,19 +4,25 @@ local uci = require('simple-uci').cursor()
 
 -- use ff dns and keep dnsmasq to the private network for now
 
--- the network this names used to be called 'ap'; dnsmasq binds to what is
--- listed here and nothing else, so a name no interface has any more leaves the
--- private network without DHCP or DNS
-uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'private' })
+-- dnsmasq binds to what is listed here and nothing else, so every network of
+-- the node's own has to be named: one left out keeps its generated dhcp-range
+-- and still gets no DHCP and no DNS. The private one used to be called 'ap'.
+uci:set('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface', { 'private', 'exposed' })
 -- uci:delete('dhcp', uci:get_first('dhcp', 'dnsmasq'), 'interface')
 
 -- The DNS server handed to clients has to be the option payload: the
 -- three argument form of set() would set the section type instead,
 -- leaving 500-ddhcpd-option-nextnode's payload of the next-node
--- address in place. dnsmasq is bound to the private network above, so
--- nothing answers on the next-node address and clients end up without
--- working DNS.
-uci:set('ddhcpd', 'nextnode_dns', 'payload', '10.12.0.10')
+-- address in place. dnsmasq is bound to the node's own networks above,
+-- so nothing answers on the next-node address and clients end up
+-- without working DNS.
+--
+-- Only where ddhcpd is installed at all: it is out of the image for now,
+-- and writing its config would leave one behind for a package that is
+-- not there.
+if uci:get_first('ddhcpd', 'ddhcpd') then
+	uci:set('ddhcpd', 'nextnode_dns', 'payload', '10.12.0.10')
+	uci:save('ddhcpd')
+end
 
 uci:save('dhcp')
-uci:save('ddhcpd')

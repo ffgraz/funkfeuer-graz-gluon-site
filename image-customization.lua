@@ -27,8 +27,12 @@ packages {
 	'ffgraz-extra-networks', 'ffgraz-web-extra-networks',
 	'ffgraz-private-ap', 'ffgraz-web-private-ap',
 	'ffgraz-migrations',
-	'ffgraz-ddhcpd-nextnode',
-	'ffgraz-ddhcpd',
+	-- ddhcpd and dnsmasq both bind 0.0.0.0:67 and cannot coexist: whichever
+	-- starts first wins and the other crash loops. dnsmasq is START=19 and
+	-- ddhcpd START=90, so ddhcpd has been the one losing, and the node's own
+	-- networks need dnsmasq. Out until that is sorted.
+	-- 'ffgraz-ddhcpd-nextnode',
+	-- 'ffgraz-ddhcpd',
 	'ffgraz-monitor-and-reboot',
 	'ffgraz-blink',
 	'ffda-gluon-usteer',
