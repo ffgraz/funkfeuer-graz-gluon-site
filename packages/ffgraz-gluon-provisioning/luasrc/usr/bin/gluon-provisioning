@@ -161,6 +161,27 @@ local function board()
 end
 
 --[[
+	This node's own certificate fingerprint, if it has one.
+
+	The config-mode proxy pins to it, so reporting it is what lets the proxy
+	tell this node from something answering in its place. The helper belongs to
+	ffgraz-config-mode-remote, so a node without that package simply reports
+	nothing and the field is absent.
+]]
+local function tls_fingerprint()
+	local pipe = io.popen('gluon-config-mode-remote-fingerprint 2>/dev/null')
+
+	if not pipe then
+		return nil
+	end
+
+	local out = pipe:read('*l')
+	pipe:close()
+
+	return out and out:match('^%x+$') and out or nil
+end
+
+--[[
 	The transit networks to the devices bridging this node to another one.
 
 	A link is named by the uci section it lives in and by the device the link
@@ -214,6 +235,7 @@ local function do_provision()
 		node_id = util.node_id(),
 		model = model,
 		board_name = board_name,
+		tls_fingerprint = tls_fingerprint(),
 		networks = requested_networks(),
 		links = requested_links(),
 	})
@@ -348,6 +370,16 @@ local function do_provision()
 	end
 
 	--[[
+		The key the config-mode proxy's capabilities are signed with.
+
+		Provisioned rather than baked into the firmware so it can be rotated
+		without a rebuild - a node picks up a new one on its next run.
+	]]
+	if type(resp.config_access) == 'table' and resp.config_access.pubkey then
+		set('gluon-config-mode-remote', 'remote', 'pubkey', resp.config_access.pubkey)
+	end
+
+	--[[
 		The links. Only the range is set here: 115-gluon-linknets builds the
 		interface out of it, and the far end is given the second address by
 		whoever configures the device on it.
@@ -368,6 +400,7 @@ local function do_provision()
 	uci:save('gluon-static-ip')
 	uci:save('gluon-provisioning')
 	uci:save('gluon-node-info')
+	uci:save('gluon-config-mode-remote')
 	uci:save('network')
 	os.execute('exec uci commit')
 

@@ -13,6 +13,7 @@ local RESPONSE_TABLE = {
 	location_name = 'schlossberg', node_name = 'nord',
 	contact = 'admin@example.org', latitude = 47.0755, longitude = 15.437,
 	mesh_vpn = true,
+	config_access = { pubkey = '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA\n-----END PUBLIC KEY-----\n' },
 	loopback = {
 		ip4 = '10.13.0.1',
 		-- a prefix the server should not have sent: it describes the pool,
@@ -34,6 +35,7 @@ local RESPONSE_TABLE = {
 	},
 }
 
+local FINGERPRINT = string.rep('ab', 32)
 local UBUS_BOARD = 'ubus board'
 local BOARD_TABLE = {
 	model = 'Extreme Networks WS-AP3805i',
@@ -52,6 +54,7 @@ local config = {
 	},
 	['gluon-static-ip'] = { loopback = { ip4 = '10.12.5.208' } },
 	['gluon-node-info'] = { owner = {}, location = {} },
+	['gluon-config-mode-remote'] = { remote = {} },
 	['network'] = { exposed = {}, private = {} },
 }
 
@@ -178,6 +181,9 @@ local real_execute = os.execute
 local commands = {}
 os.execute = function(cmd) -- luacheck: ignore
 	table.insert(commands, cmd)
+	if cmd:match('gluon%-config%-mode%-remote%-fingerprint') then
+		return nil
+	end
 	local out = cmd:match("uclient%-fetch.* %-O '([^']+)'")
 	local dump = cmd:match("^ubus call system board > '([^']+)'")
 	if out or dump then
@@ -186,6 +192,14 @@ os.execute = function(cmd) -- luacheck: ignore
 		f:close()
 	end
 	return 0
+end
+
+local real_popen = io.popen
+io.popen = function(cmd) -- luacheck: ignore
+	if cmd:match('gluon%-config%-mode%-remote%-fingerprint') then
+		return { read = function() return FINGERPRINT end, close = function() end }
+	end
+	return real_popen(cmd)
 end
 
 -- run ------------------------------------------------------------------
@@ -201,6 +215,7 @@ assert(loadfile(script))()
 
 os.execute = real_execute -- luacheck: ignore
 os.exit = real_exit -- luacheck: ignore
+io.popen = real_popen -- luacheck: ignore
 
 -- assert ---------------------------------------------------------------
 
@@ -224,6 +239,7 @@ eq(sent.primary_mac, 'd8:84:66:4f:fe:01', 'primary_mac')
 eq(sent.node_id, 'd884664ffe01', 'node_id')
 eq(sent.model, 'Extreme Networks WS-AP3805i', 'model')
 eq(sent.board_name, 'extreme-networks,ws-ap3805i', 'board_name')
+eq(sent.tls_fingerprint, FINGERPRINT, 'the certificate fingerprint is reported')
 
 eq(#sent.networks, 1, 'only networks with ports are asked for')
 eq(sent.networks[1], 'exposed', 'exposed is asked for')
@@ -258,6 +274,8 @@ eq(cursor:get('gluon-node-info', 'location', 'share_location'), '1', 'share_loca
 eq(cursor:get('gluon', 'mesh_vpn', 'enabled'), true, 'mesh vpn follows the answer')
 eq(cursor:get('gluon-provisioning', 'provisioning', 'location_name'), 'schlossberg',
 	'location_name')
+assert(cursor:get('gluon-config-mode-remote', 'remote', 'pubkey'):match('BEGIN PUBLIC KEY'),
+	'the config access key was not stored')
 
 -- a change happened, so the node must reconfigure
 local reloaded = false
