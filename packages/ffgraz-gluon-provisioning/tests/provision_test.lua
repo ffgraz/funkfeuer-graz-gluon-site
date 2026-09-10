@@ -6,59 +6,53 @@ local dir = arg[0]:match('^(.*)/[^/]*$') or '.'
 local script = dir .. '/../luasrc/usr/bin/gluon-provisioning'
 
 -- the response the fake server hands out
-local RESPONSE = [[{"ok":true,
-	"location_name":"schlossberg","node_name":"nord",
-	"contact":"admin@example.org","latitude":47.0755,"longitude":15.437,
-	"interfaces":{
-		"loopback":{"ip":"2001:470:75c5:23::42/64"},
-		"mesh_radio0":{"ip":"10.12.34.56/16"},
-		"mesh_uplink":{"ip":"2001:db8::1/64"}
-	}}]]
+local RESPONSE = [[{"ok":true,"...":"see RESPONSE_TABLE"}]]
 
 local RESPONSE_TABLE = {
 	ok = true,
 	location_name = 'schlossberg', node_name = 'nord',
 	contact = 'admin@example.org', latitude = 47.0755, longitude = 15.437,
-	interfaces = {
-		loopback = { ip = '2001:470:75c5:23::42/64' },
-		mesh_radio0 = { ip = '10.12.34.56/16' },
-		-- wrong family for a requested_type 4 interface: must be rejected
-		mesh_uplink = { ip = '2001:db8::1/64' },
-		-- mesh_vpn deliberately absent: the vpn must end up off
+	mesh_vpn = true,
+	loopback = {
+		ip4 = '10.13.0.1',
+		-- a prefix the server should not have sent: it describes the pool,
+		-- not this node, and must be dropped rather than stored
+		ip6 = '2001:470:75c5::da84:66ff:fe4f:fe01/64',
+	},
+	networks = {
+		exposed = {
+			prefix4 = '10.13.230.8/29',
+			prefix6 = '2001:470:75c5:2::/64',
+		},
+		-- wrong family for the key: must be rejected, not written
+		private = { prefix4 = '2001:db8::/64' },
+	},
+	links = {
+		iface_eth0_vlan10 = { linknet = '10.13.208.4/30' },
+		-- not a /30: must be rejected
+		iface_eth0_vlan11 = { linknet = '10.13.209.0/24' },
 	},
 }
 
--- what netifd reports: a device for the interfaces that are up, none for
--- ibss_radio0 and mesh_vpn, which are configured but down
-local UBUS_DUMP = 'ubus dump'
-local UBUS_TABLE = {
-	interface = {
-		{ interface = 'loopback', l3_device = 'lo' },
-		{ interface = 'mesh_radio0', l3_device = 'wlan0' },
-		{ interface = 'mesh_uplink', l3_device = 'm_uplink' },
-		{ interface = 'ibss_radio0' },
-		{ interface = 'mesh_vpn' },
-	},
+local UBUS_BOARD = 'ubus board'
+local BOARD_TABLE = {
+	model = 'Extreme Networks WS-AP3805i',
+	board_name = 'extreme-networks,ws-ap3805i',
 }
 
 -- uci ------------------------------------------------------------------
 
 local config = {
 	['gluon-provisioning'] = { provisioning = { enabled = '1', token = 'tok3n' } },
-	['gluon'] = { mesh_vpn = { enabled = '1' } },
-	['gluon-static-ip'] = { mesh_radio0 = { ip4 = '10.12.0.1/16' } },
-	['gluon-node-info'] = { owner = {}, location = {} },
-	['network'] = {
-		loopback = { proto = 'static' },
-		mesh_radio0 = { proto = 'static' },
-		mesh_uplink = { proto = 'static' },
-		mesh_other = { proto = 'static', disabled = '1' },
-		-- configured and enabled, but netifd has no device for it
-		ibss_radio0 = { proto = 'static' },
-		-- no device either, but exempt: the vpn is asked for regardless
-		mesh_vpn = { proto = 'static' },
+	['gluon'] = {
+		mesh_vpn = { enabled = '0' },
+		iface_eth0_vlan10 = { name = 'eth0.10', role = 'link' },
+		iface_eth0_vlan11 = { name = 'eth0.11', role = 'link',
+			linknet = '10.13.208.0/30' },
 	},
-	['wireless'] = { mesh_radio0 = { macaddr = 'e2:1a:c1:00:11:24' } },
+	['gluon-static-ip'] = { loopback = { ip4 = '10.12.5.208' } },
+	['gluon-node-info'] = { owner = {}, location = {} },
+	['network'] = { exposed = {}, private = {} },
 }
 
 local cursor = {}
@@ -85,7 +79,7 @@ end
 
 -- stubs ----------------------------------------------------------------
 
-local hostname = 'gluon-e21ac1001122'
+local hostname = 'gluon-d884664ffe01'
 
 package.preload['simple-uci'] = function()
 	return { cursor = function() return cursor end }
@@ -94,17 +88,29 @@ end
 package.preload['luci.ip'] = function()
 	local function cidr(addr, len)
 		local v6 = addr:find(':') ~= nil
-		return {
+
+		local self
+		self = {
 			is6 = function() return v6 end,
+			is4 = function() return not v6 end,
+			prefix = function() return len ~= '' and tonumber(len) or nil end,
 			-- a host address is the address on its own
 			host = function() return cidr(addr, '') end,
+			-- enough of minhost for the test: the ranges it is given end in
+			-- .0 or ::, so the first host is the last octet or group plus one
+			minhost = function()
+				if v6 then return cidr(addr:gsub('::$', '::1'), '') end
+				local head, tail = addr:match('^(%d+%.%d+%.%d+%.)(%d+)$')
+				return cidr(head .. tostring(tonumber(tail) + 1), '')
+			end,
 			string = function() return addr .. (len ~= '' and ('/' .. len) or '') end,
 		}
+		return self
 	end
 
 	return {
 		new = function(str)
-			local addr, len = str:match('^([^/]+)/?(%d*)$')
+			local addr, len = tostring(str):match('^([^/]+)/?(%d*)$')
 			if not addr then return nil end
 			return cidr(addr, len)
 		end,
@@ -116,7 +122,7 @@ package.preload['luci.jsonc'] = function()
 	return {
 		stringify = function(t) sent = t; return RESPONSE end,
 		parse = function(raw)
-			if raw == UBUS_DUMP then return UBUS_TABLE end
+			if raw == UBUS_BOARD then return BOARD_TABLE end
 			return RESPONSE_TABLE
 		end,
 	}
@@ -127,16 +133,36 @@ package.preload['gluon.site'] = function()
 end
 
 package.preload['gluon.util'] = function()
-	return { node_id = function() return 'e21ac1001122' end }
+	return {
+		node_id = function() return 'd884664ffe01' end,
+		-- exposed has a port, private does not
+		get_role_interfaces = function(_, role)
+			if role == 'exposed' then return { 'eth0.11' } end
+			return {}
+		end,
+	}
 end
 
 package.preload['gluon.sysconfig'] = function()
-	return { primary_mac = 'e2:1a:c1:00:11:22' }
+	return { primary_mac = 'd8:84:66:4f:fe:01' }
 end
 
-package.preload['gluon.wireless'] = function()
+package.preload['gluon.extranets'] = function()
 	return {
-		foreach_radio = function(_, fn) fn({ ['.name'] = 'radio0' }, 1, {}) end,
+		NETWORKS = {
+			{ name = 'private', role = 'private' },
+			{ name = 'exposed', role = 'exposed' },
+		},
+		links = function()
+			return {
+				{ section = 'iface_eth0_vlan10', device = 'eth0.10', cidr = nil },
+				{ section = 'iface_eth0_vlan11', device = 'eth0.11',
+					cidr = '10.13.208.0/30' },
+			}
+		end,
+		linknet = function(value)
+			return type(value) == 'string' and value:match('/30$') and value or nil
+		end,
 	}
 end
 
@@ -153,10 +179,10 @@ local commands = {}
 os.execute = function(cmd) -- luacheck: ignore
 	table.insert(commands, cmd)
 	local out = cmd:match("uclient%-fetch.* %-O '([^']+)'")
-	local dump = cmd:match("^ubus call network%.interface dump > '([^']+)'")
+	local dump = cmd:match("^ubus call system board > '([^']+)'")
 	if out or dump then
 		local f = io.open(out or dump, 'w')
-		f:write(out and RESPONSE or UBUS_DUMP)
+		f:write(out and RESPONSE or UBUS_BOARD)
 		f:close()
 	end
 	return 0
@@ -184,6 +210,8 @@ end
 
 eq(exit_code, 0, 'exit status')
 
+-- the request ----------------------------------------------------------
+
 local request
 for _, c in ipairs(commands) do
 	if c:match('uclient%-fetch') then request = c end
@@ -192,32 +220,44 @@ assert(request, 'no request was made')
 assert(request:match("Authorization: Bearer tok3n"), 'token is not sent as bearer auth')
 assert(request:match('/provision'), 'wrong endpoint: ' .. request)
 
-eq(sent.primary_mac, 'e2:1a:c1:00:11:22', 'primary_mac')
-eq(sent.node_id, 'e21ac1001122', 'node_id')
-eq(sent.interfaces.loopback.requested_type, 6, 'loopback asks for v6')
-eq(sent.interfaces.loopback.type, 'loopback', 'loopback type')
-eq(sent.interfaces.mesh_radio0.requested_type, 4, 'mesh asks for v4')
-eq(sent.interfaces.mesh_radio0.type, 'wifi', 'wifi type')
-eq(sent.interfaces.mesh_radio0.mac, 'e2:1a:c1:00:11:24', 'wifi mac')
-eq(sent.interfaces.mesh_uplink.type, 'ethernet', 'ethernet type')
-eq(sent.interfaces.mesh_other, nil, 'disabled interface is not requested')
-eq(sent.interfaces.ibss_radio0, nil, 'interface without a device is not requested')
-assert(sent.interfaces.mesh_vpn, 'the mesh vpn is asked for even with no device')
-eq(sent.interfaces.mesh_vpn.requested_type, 4, 'mesh vpn asks for v4')
-eq(sent.interfaces.mesh_vpn.type, 'vpn', 'mesh vpn type')
+eq(sent.primary_mac, 'd8:84:66:4f:fe:01', 'primary_mac')
+eq(sent.node_id, 'd884664ffe01', 'node_id')
+eq(sent.model, 'Extreme Networks WS-AP3805i', 'model')
+eq(sent.board_name, 'extreme-networks,ws-ap3805i', 'board_name')
 
-eq(cursor:get('gluon-static-ip', 'mesh_radio0', 'ip4'), '10.12.34.56/16', 'mesh v4 address')
-eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'), '2001:470:75c5:23::42',
-	'loopback v6 address is stored without the pool prefix')
-eq(cursor:get('gluon-static-ip', 'mesh_uplink', 'ip4'), nil, 'v6 answer to a v4 request must be rejected')
-eq(cursor:get('gluon-static-ip', 'mesh_other', 'ip4'), nil, 'disabled interface must not be provisioned')
+eq(#sent.networks, 1, 'only networks with ports are asked for')
+eq(sent.networks[1], 'exposed', 'exposed is asked for')
+
+eq(#sent.links, 2, 'every link is asked for')
+eq(sent.links[1].section, 'iface_eth0_vlan10', 'link section')
+eq(sent.links[1].device, 'eth0.10', 'link device')
+eq(sent.links[1].current, nil, 'a link with no range says so')
+eq(sent.links[2].current, '10.13.208.0/30', 'a link reports what it carries')
+
+-- the answer -----------------------------------------------------------
+
+eq(cursor:get('gluon-static-ip', 'loopback', 'ip4'), '10.13.0.1', 'loopback v4')
+eq(cursor:get('gluon-static-ip', 'loopback', 'ip6'),
+	'2001:470:75c5::da84:66ff:fe4f:fe01', 'loopback v6 is stored without a prefix')
+
+eq(cursor:get('network', 'exposed', 'ipaddr'), '10.13.230.9/29',
+	'the node takes the first address of its exposed range')
+eq(cursor:get('network', 'exposed', 'ip6addr'), '2001:470:75c5:2::1/64',
+	'and the same on v6')
+eq(cursor:get('network', 'private', 'ipaddr'), nil,
+	'a v6 range under prefix4 must be rejected')
+
+eq(cursor:get('gluon', 'iface_eth0_vlan10', 'linknet'), '10.13.208.4/30', 'linknet')
+eq(cursor:get('gluon', 'iface_eth0_vlan11', 'linknet'), '10.13.208.0/30',
+	'a range that is not a /30 must be rejected, leaving what was there')
 
 eq(hostname, 'schlossberg-nord', 'hostname')
 eq(cursor:get('gluon-node-info', 'owner', 'contact'), 'admin@example.org', 'contact')
 eq(cursor:get('gluon-node-info', 'location', 'latitude'), 47.0755, 'latitude')
 eq(cursor:get('gluon-node-info', 'location', 'share_location'), '1', 'share_location')
-eq(cursor:get('gluon', 'mesh_vpn', 'enabled'), false, 'mesh vpn off when not provisioned')
-eq(cursor:get('gluon-provisioning', 'provisioning', 'location_name'), 'schlossberg', 'location_name')
+eq(cursor:get('gluon', 'mesh_vpn', 'enabled'), true, 'mesh vpn follows the answer')
+eq(cursor:get('gluon-provisioning', 'provisioning', 'location_name'), 'schlossberg',
+	'location_name')
 
 -- a change happened, so the node must reconfigure
 local reloaded = false

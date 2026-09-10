@@ -6,7 +6,7 @@ local site = require 'gluon.site'
 local json = require 'luci.jsonc'
 local util = require 'gluon.util'
 local sysconfig = require 'gluon.sysconfig'
-local wireless = require 'gluon.wireless'
+local extranets = require 'gluon.extranets'
 local pretty_hostname = require 'pretty_hostname'
 
 -- GLUON_PROVISIONING_API points the node at a single server instead of the
@@ -137,89 +137,66 @@ local function post_json(url, token, body)
 	return resp
 end
 
--- The interfaces netifd has an actual device for, as a set of names.
---
--- Being configured is not the same as existing: a mesh VPN that is not up and
--- a wired mesh on a port this hardware does not have are both in the network
--- config, and netifd reports them without an l3_device. An address
--- provisioned for one of those is stored in uci and never reaches the kernel,
--- so there is no point asking for it.
---
--- Returns nil if netifd cannot be asked, which means "do not filter" - losing
--- the ubus call should not turn provisioning into a no-op.
-local function interfaces_with_device()
+-- What this hardware is, so the server can record it instead of the
+-- placeholder a node is created with. From ubus rather than from
+-- /tmp/sysinfo, because board_name is what names the vendor.
+local function board()
 	local out = os.tmpname()
 
-	local ok = os.execute('ubus call network.interface dump > '
-		.. shellquote(out) .. ' 2>/dev/null') == 0
+	local ok = os.execute('ubus call system board > ' .. shellquote(out)
+		.. ' 2>/dev/null') == 0
 
 	local f = io.open(out)
 	local raw = f and f:read('*a') or ''
 	if f then f:close() end
 	os.remove(out)
 
-	local dump = ok and json.parse(raw) or nil
-	if type(dump) ~= 'table' or type(dump.interface) ~= 'table' then
-		print('W: could not ask netifd which interfaces exist')
-		return nil
+	local info = ok and json.parse(raw) or nil
+	if type(info) ~= 'table' then
+		print('W: could not ask ubus what this board is')
+		return nil, nil
 	end
 
-	local have = {}
-	for _, iface in ipairs(dump.interface) do
-		if iface.l3_device then
-			have[iface.interface] = true
-		end
-	end
-
-	return have
+	return info.model, info.board_name
 end
 
--- Interfaces to ask for even when netifd has no device for them.
---
--- The mesh VPN is the bootstrap case: while it is off there is no device to
--- report, and it is the server's answer that decides whether we turn it on at
--- all. Requiring a device first would mean a node whose VPN is down could
--- never be given one.
-local NO_DEVICE_NEEDED = {
-	mesh_vpn = true,
-}
+--[[
+	The transit networks to the devices bridging this node to another one.
 
--- The interfaces we want addresses for: every mesh interface that is actually
--- in use asks for IPv4, the loopback carries our IPv6 node address.
-local function requested_interfaces()
-	local want = {}
-	local have = interfaces_with_device()
+	A link is named by the uci section it lives in and by the device the link
+	role was given to - both stable, unlike the positional lnk<n> name that
+	only means anything inside one run of extranets.links().
+]]
+local function requested_links()
+	local links = {}
 
-	local function want_iface(name, family, itype, macaddr)
-		if have and not have[name] and not NO_DEVICE_NEEDED[name] then return end
-		want[name] = { requested_type = family, type = itype, mac = macaddr }
+	for _, link in ipairs(extranets.links()) do
+		table.insert(links, {
+			section = link.section,
+			device = link.device,
+			current = link.cidr,
+		})
 	end
 
-	local function want_mesh(name, itype, macaddr)
-		if not uci:get('network', name, 'proto') then return end
-		if uci:get_bool('network', name, 'disabled') then return end
-		want_iface(name, 4, itype, macaddr)
-	end
+	return links
+end
 
-	want_iface('loopback', 6, 'loopback', uci:get('network', 'loopback', 'macaddr'))
+--[[
+	The extra networks this hardware actually has ports for.
 
-	wireless.foreach_radio(uci, function(radio, _, _)
-		for _, prefix in ipairs({ 'mesh_', 'p2p_', 'ibss_' }) do
-			local name = prefix .. radio['.name']
-			if not uci:get_bool('wireless', name, 'disabled') then
-				want_mesh(name, 'wifi', uci:get('wireless', name, 'macaddr'))
-			end
+	A node with no interface in the exposed role has nothing to put an exposed
+	range on, and asking for one would take a /29 out of the pool for nothing.
+]]
+local function requested_networks()
+	local names = {}
+
+	for _, network in ipairs(extranets.NETWORKS) do
+		if #util.get_role_interfaces(uci, network.role) > 0 then
+			table.insert(names, network.name)
 		end
-	end)
+	end
 
-	-- asked for even when the mesh VPN is currently off: whether the server
-	-- provisions it is what decides if we turn it on (see NO_DEVICE_NEEDED)
-	want_mesh('mesh_vpn', 'vpn', uci:get('network', 'mesh_vpn', 'macaddr'))
-
-	want_mesh('mesh_uplink', 'ethernet', uci:get('network', 'mesh_uplink', 'macaddr'))
-	want_mesh('mesh_other', 'ethernet', uci:get('network', 'mesh_other', 'macaddr'))
-
-	return want
+	return names
 end
 
 local function do_provision()
@@ -230,12 +207,15 @@ local function do_provision()
 		return 2
 	end
 
-	local want = requested_interfaces()
+	local model, board_name = board()
 
 	local body = json.stringify({
 		primary_mac = sysconfig.primary_mac,
 		node_id = util.node_id(),
-		interfaces = want,
+		model = model,
+		board_name = board_name,
+		networks = requested_networks(),
+		links = requested_links(),
 	})
 
 	local resp, err
@@ -261,8 +241,8 @@ local function do_provision()
 		return 2
 	end
 
-	if type(resp.interfaces) ~= 'table' then
-		print('E: response carries no interfaces')
+	if type(resp.loopback) ~= 'table' then
+		print('E: response carries no loopback addresses')
 		return 1
 	end
 
@@ -316,40 +296,71 @@ local function do_provision()
 		uci:set('gluon-node-info', location, 'longitude', resp.longitude)
 	end
 
-	-- a provisioned mesh_vpn address means the node is supposed to tunnel
-	local has_tunnel = type(resp.interfaces.mesh_vpn) == 'table' and resp.interfaces.mesh_vpn.ip ~= nil
-	print('Syncing mesh vpn: ' .. (has_tunnel and 'on' or 'off'))
-	set('gluon', 'mesh_vpn', 'enabled', has_tunnel, true)
+	-- The server says whether the node should tunnel only when it has been
+	-- configured to have an opinion; with the field absent the mesh VPN is
+	-- left exactly as the operator set it.
+	if type(resp.mesh_vpn) == 'boolean' then
+		print('Syncing mesh vpn: ' .. (resp.mesh_vpn and 'on' or 'off'))
+		set('gluon', 'mesh_vpn', 'enabled', resp.mesh_vpn, true)
+	end
 
-	for name, req in pairs(want) do
-		local got = resp.interfaces[name]
-		local option = req.requested_type == 6 and 'ip6' or 'ip4'
+	--[[
+		The node's own addresses. Both are host addresses: 310-static-ip puts
+		them on loopback as /32 and /128, so a prefix here would describe the
+		server's pool rather than this node and is dropped.
+	]]
+	for option, family in pairs({ ip4 = 4, ip6 = 6 }) do
+		local got = resp.loopback[option]
 
-		if type(got) ~= 'table' or not got.ip then
-			printf('  %s: not provisioned', name)
+		if got == nil then
+			printf('  loopback: %s not provisioned', option)
 		else
-			local addr = ip.new(got.ip)
+			local addr = ip.new(got)
 
-			if not addr or (req.requested_type == 6) ~= addr:is6() then
-				printf('E: %s: invalid IPv%i address %s', name, req.requested_type, tostring(got.ip))
+			if not addr or (family == 6) ~= addr:is6() then
+				printf('E: loopback: %s is not an IPv%i address', tostring(got), family)
 			else
-				-- the loopback carries a single host address: 310-static-ip
-				-- derives it as one, netifd puts it on lo as /128, and
-				-- ffgraz-migrations deletes a loopback entry that carries a
-				-- prefix length. The server's prefix describes its pool, not
-				-- our mask, so drop it. A mesh address keeps its prefix - the
-				-- interface needs the netmask.
-				local cidr = (req.type == 'loopback' and addr:host() or addr):string()
-				local current = uci:get('gluon-static-ip', name, option)
-
-				if current ~= cidr then
-					printf('  %s: %s changed to %s, was %s', name, option, cidr, current or '[unset]')
-					uci:set('gluon-static-ip', name, option, cidr)
-					has_changes = true
-				else
-					printf('  %s: %s unchanged (%s)', name, option, cidr)
-				end
+				set('gluon-static-ip', 'loopback', option, addr:host():string())
 			end
+		end
+	end
+
+	--[[
+		The extra networks. The server hands out the range and the node takes
+		its first address, the same way it does on a link - so what counts as
+		"the node's address in it" is decided in one place.
+	]]
+	local networks = type(resp.networks) == 'table' and resp.networks or {}
+
+	for name, provisioned in pairs(networks) do
+		for key, option in pairs({ prefix4 = 'ipaddr', prefix6 = 'ip6addr' }) do
+			local range = type(provisioned) == 'table' and provisioned[key]
+			local family = key == 'prefix4' and 4 or 6
+			local addr = range and ip.new(range)
+
+			if range and (not addr or (family == 6) ~= addr:is6() or not addr:prefix()) then
+				printf('E: %s: %s is not an IPv%i range', name, tostring(range), family)
+			elseif range then
+				set('network', name, option,
+					addr:minhost():string() .. '/' .. addr:prefix())
+			end
+		end
+	end
+
+	--[[
+		The links. Only the range is set here: 115-gluon-linknets builds the
+		interface out of it, and the far end is given the second address by
+		whoever configures the device on it.
+	]]
+	local links = type(resp.links) == 'table' and resp.links or {}
+
+	for section, provisioned in pairs(links) do
+		local linknet = type(provisioned) == 'table' and provisioned.linknet or nil
+
+		if linknet ~= nil and not extranets.linknet(linknet) then
+			printf('E: %s: %s is not a /30', section, tostring(linknet))
+		else
+			set('gluon', section, 'linknet', linknet)
 		end
 	end
 
@@ -357,6 +368,7 @@ local function do_provision()
 	uci:save('gluon-static-ip')
 	uci:save('gluon-provisioning')
 	uci:save('gluon-node-info')
+	uci:save('network')
 	os.execute('exec uci commit')
 
 	if has_changes then

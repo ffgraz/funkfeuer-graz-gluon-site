@@ -3,7 +3,8 @@
 
 It speaks the API described in ../../API.md: it generates one random
 token and a random set of node info, and hands every node that presents
-that token an address per interface it asks for.
+that token its own addresses, a range for each extra network it has
+ports for, and a /30 for each of its links.
 
 Run it by hand and point a node at it:
 
@@ -38,8 +39,9 @@ NODES = ('nord', 'sued', 'ost', 'west', 'dach', 'turm', 'giebel', 'mast')
 class Provisioner:
     """The provisioning decisions, without the HTTP around them."""
 
-    def __init__(self, token=None, prefix4='10.12.0.0/16',
-                 prefix6='2001:db8:23::/64', skip=(), seed=None):
+    def __init__(self, token=None, prefix4='10.13.0.0/16',
+                 prefix6='2001:db8:23::/48', skip=(), seed=None,
+                 mesh_vpn=None):
         rnd = random.Random(seed)
 
         #: The one token this server accepts.
@@ -55,10 +57,17 @@ class Provisioner:
         self.net4 = ipaddress.ip_network(prefix4)
         self.net6 = ipaddress.ip_network(prefix6)
 
-        #: Interface names this server refuses to provision. Leaving out
-        #: an interface is how a server says "this one gets no address" -
-        #: for mesh_vpn that is also how it says "do not tunnel".
+        #: Names this server refuses to provision - a link section or an
+        #: extra network. Leaving one out is how a server says "this one
+        #: gets no range", and the node leaves what it has alone.
         self.skip = set(skip)
+
+        #: What to tell the node about the mesh VPN, or None to say nothing
+        #: and leave its setting alone.
+        self.mesh_vpn = mesh_vpn
+
+        #: The hardware the last node reported about itself.
+        self.board = None
 
         #: Every request body received, in order.
         self.requests = []
@@ -69,11 +78,11 @@ class Provisioner:
         self._lock = threading.Lock()
 
     def address(self, name, family):
-        """A stable address for this interface, in the requested family.
+        """A stable host address for this name, in the requested family.
 
         Stable matters: a node that asks twice has to be told the same
         thing twice, or it would reconfigure itself on every run."""
-        key = (name, family)
+        key = ('address', name, family)
         with self._lock:
             if key not in self._assigned:
                 net = self.net4 if family == 4 else self.net6
@@ -84,7 +93,23 @@ class Provisioner:
                     if addr not in self._taken:
                         break
                 self._taken.add(addr)
-                self._assigned[key] = '%s/%d' % (addr, net.prefixlen)
+                self._assigned[key] = str(addr)
+            return self._assigned[key]
+
+    def prefix(self, name, family, prefix_len):
+        """A stable range for this name, aligned to its own size."""
+        key = ('prefix', name, family, prefix_len)
+        with self._lock:
+            if key not in self._assigned:
+                net = self.net4 if family == 4 else self.net6
+                size = 1 << (net.max_prefixlen - prefix_len)
+                count = min(net.num_addresses // size, 1 << 16)
+                while True:
+                    start = int(net.network_address) + self._rnd.randrange(1, count) * size
+                    if start not in self._taken:
+                        break
+                self._taken.add(start)
+                self._assigned[key] = str(ipaddress.ip_network((start, prefix_len)))
             return self._assigned[key]
 
     def provision(self, token, request):
@@ -99,22 +124,50 @@ class Provisioner:
         if not request.get('primary_mac') or not request.get('node_id'):
             return {'ok': False, 'error': 'request names no node'}
 
-        interfaces = {}
-        for name, want in (request.get('interfaces') or {}).items():
-            family = want.get('requested_type')
-            if name in self.skip or family not in (4, 6):
-                continue
-            interfaces[name] = {'ip': self.address(name, family)}
+        if request.get('board_name'):
+            self.board = (request.get('model'), request['board_name'])
 
-        return {
+        node = request['node_id']
+
+        networks = {}
+        for name in request.get('networks') or []:
+            # only the exposed network is provisioned: the private one is
+            # the operator's to choose and is translated on the way out
+            if name in self.skip or name != 'exposed':
+                continue
+            networks[name] = {
+                'prefix4': self.prefix('%s-%s' % (node, name), 4, 29),
+                'prefix6': self.prefix('%s-%s' % (node, name), 6, 64),
+            }
+
+        links = {}
+        for link in request.get('links') or []:
+            section = link.get('section')
+            if not section or section in self.skip:
+                continue
+            links[section] = {
+                'linknet': self.prefix('%s-%s' % (node, section), 4, 30),
+            }
+
+        answer = {
             'ok': True,
             'location_name': self.location_name,
             'node_name': self.node_name,
             'contact': self.contact,
             'latitude': self.latitude,
             'longitude': self.longitude,
-            'interfaces': interfaces,
+            'loopback': {
+                'ip4': self.address(node, 4),
+                'ip6': self.address(node, 6),
+            },
+            'networks': networks,
+            'links': links,
         }
+
+        if self.mesh_vpn is not None:
+            answer['mesh_vpn'] = self.mesh_vpn
+
+        return answer
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -221,11 +274,14 @@ def main():
     parser.add_argument('--host', default='0.0.0.0')
     parser.add_argument('--port', type=int, default=8080)
     parser.add_argument('--token', help='fixed token (default: random)')
-    parser.add_argument('--prefix4', default='10.12.0.0/16')
-    parser.add_argument('--prefix6', default='2001:db8:23::/64')
+    parser.add_argument('--prefix4', default='10.13.0.0/16')
+    parser.add_argument('--prefix6', default='2001:db8:23::/48')
     parser.add_argument('--skip', default='', metavar='NAMES',
-                        help='comma-separated interfaces to refuse,'
-                             ' e.g. mesh_vpn')
+                        help='comma-separated link sections or networks to'
+                             ' refuse, e.g. exposed')
+    parser.add_argument('--mesh-vpn', choices=('on', 'off'),
+                        help='tell the node whether to tunnel'
+                             ' (default: say nothing)')
     parser.add_argument('-q', '--quiet', action='store_true',
                         help='do not log requests')
     args = parser.parse_args()
@@ -233,7 +289,8 @@ def main():
     server = ProvisioningServer(
         host=args.host, port=args.port, verbose=not args.quiet,
         token=args.token, prefix4=args.prefix4, prefix6=args.prefix6,
-        skip=[s for s in args.skip.split(',') if s])
+        skip=[s for s in args.skip.split(',') if s],
+        mesh_vpn={'on': True, 'off': False}.get(args.mesh_vpn))
 
     print('listening on %s:%d' % (args.host, server.port))
     print('token:         %s' % server.token)

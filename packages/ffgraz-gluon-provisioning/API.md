@@ -31,6 +31,21 @@ python3 tests/lib/provisioning_server.py --port 8080
 node; `tests/provision_test.lua` checks the response handling on its own
 (`lua tests/provision_test.lua`, no node needed).
 
+## What a node is given
+
+A node carries one address of its own per family, both on `loopback`
+(`ffgraz-static-ip`). It no longer carries an address per mesh interface: olsrd6
+and babel mesh on the node address, and a per-interface address only gave the
+node more identities than it has.
+
+Besides that it may carry
+
+* a **link network** per interface in the `link` role — the `/30` transit to the
+  device bridging this node to another one, and
+* a range for its **exposed** network, where it has ports in that role.
+
+Both come from `ffgraz-extra-networks`.
+
 ## POST /provision
 
 ### Request
@@ -46,14 +61,14 @@ Body:
 
 ```json
 {
-  "primary_mac": "e2:1a:c1:00:11:22",
-  "node_id": "e21ac1001122",
-  "interfaces": {
-    "loopback":     { "requested_type": 6, "type": "loopback" },
-    "mesh_radio0":  { "requested_type": 4, "type": "wifi",     "mac": "e2:1a:c1:00:11:24" },
-    "mesh_uplink":  { "requested_type": 4, "type": "ethernet", "mac": "e2:1a:c1:00:11:2a" },
-    "mesh_vpn":     { "requested_type": 4, "type": "vpn",      "mac": "e2:1a:c1:00:11:27" }
-  }
+  "primary_mac": "d8:84:66:4f:fe:01",
+  "node_id": "d884664ffe01",
+  "model": "Extreme Networks WS-AP3805i",
+  "board_name": "extreme-networks,ws-ap3805i",
+  "networks": ["private", "exposed"],
+  "links": [
+    { "section": "iface_eth0_vlan10", "device": "eth0.10", "current": "10.13.208.0/30" }
+  ]
 }
 ```
 
@@ -61,38 +76,32 @@ Body:
 | --- | --- |
 | `primary_mac` | The node's primary MAC (`gluon.sysconfig.primary_mac`). |
 | `node_id` | `primary_mac` without the colons — Gluon's node id. |
-| `interfaces` | The interfaces the node wants an address for, keyed by the Gluon network/UCI interface name. |
-| `interfaces.*.requested_type` | `4` or `6` — the address family requested for that interface. |
-| `interfaces.*.type` | What the interface is: `wifi`, `ethernet`, `vpn` or `loopback`. |
-| `interfaces.*.mac` | The interface's MAC, when it has one. Omitted otherwise. |
+| `model` | The board's pretty name, from `ubus call system board`. |
+| `board_name` | The board id from the same place, e.g. `extreme-networks,ws-ap3805i`. It names the vendor before the comma. |
+| `networks` | The extra networks this hardware has ports for — the names from `extranets.NETWORKS` whose role has at least one interface. A node with no `exposed` ports does not ask for a range for one. |
+| `links` | One entry per interface in the `link` role, from `extranets.links()`. |
+| `links[].section` | The uci section the link lives in. This is what the answer is keyed by. |
+| `links[].device` | The interface the role was given to, e.g. `eth0.10`. |
+| `links[].current` | The `/30` the node carries for it now, or `null`. |
 
-Which interfaces are sent:
-
-* `loopback` — always, `requested_type: 6`, type `loopback`. This is the node's
-  IPv6 address.
-* every mesh interface that exists and is not disabled — `requested_type: 4`.
-  That is `mesh_<radio>`, `p2p_<radio>` and `ibss_<radio>` for each enabled
-  radio (type `wifi`), plus `mesh_uplink` and `mesh_other` (type `ethernet`).
-* `mesh_vpn` (type `vpn`), whenever the interface exists — also when the mesh
-  VPN is currently off, because the answer is what decides whether it gets
-  turned on.
-
-A server may answer for a subset; interfaces it omits are left untouched.
+A link is named by its section and its device rather than by the positional
+`lnk<n>` name, which only means anything inside one run of `extranets.links()`.
 
 ### Response
 
 ```json
 {
   "ok": true,
-  "location_name": "Schlossberg",
+  "location_name": "schlossberg",
   "node_name": "nord",
   "contact": "admin@example.org",
   "latitude": 47.0755,
-  "longitude": 15.4370,
-  "interfaces": {
-    "loopback":    { "ip": "2001:470:75c5:23::42/64" },
-    "mesh_radio0": { "ip": "10.12.34.56/16" }
-  }
+  "longitude": 15.437,
+  "mesh_vpn": true,
+  "loopback": { "ip4": "10.13.0.1", "ip6": "2001:470:75c5::da84:66ff:fe4f:fe01" },
+  "networks": { "exposed": { "prefix4": "10.13.230.8/29",
+                             "prefix6": "2001:470:75c5:2::/64" } },
+  "links": { "iface_eth0_vlan10": { "linknet": "10.13.208.4/30" } }
 }
 ```
 
@@ -104,11 +113,15 @@ A server may answer for a subset; interfaces it omits are left untouched.
 | `node_name` | Name of this node within the location. Optional — a location with a single node need not name it. |
 | `contact` | Owner contact, written to `gluon-node-info`. Optional. |
 | `latitude`, `longitude` | Node coordinates. Optional, but only applied when both are present; setting them also turns on location sharing. |
-| `interfaces.*.ip` | The address to configure, **with prefix length**. Must match the `requested_type` that was asked for; a mismatched family is rejected and logged. |
+| `mesh_vpn` | Whether the node should tunnel. Optional: with the field absent the node leaves `gluon.mesh_vpn.enabled` exactly as the operator set it. |
+| `loopback.ip4`, `loopback.ip6` | The node's own addresses, **without a prefix** — `310-static-ip` puts them on loopback as `/32` and `/128`. Either may be absent. A prefix sent anyway is dropped, since it would describe the server's pool rather than this node. |
+| `networks.<name>.prefix4`, `.prefix6` | The **whole range** for that network, with its prefix length. |
+| `links.<section>.linknet` | The **whole `/30`** for that link. |
 
-The prefix length matters: it ends up verbatim in `network.<iface>.ipaddr` /
-`ip6addr`, so a `/32` on a mesh interface breaks OLSR broadcasts. Hand out the
-mesh prefix length (`/16` for ffgraz).
+Ranges rather than finished addresses: the node takes the first address of the
+range itself, so "the node's address in it" is decided in one place. On a link
+that is `minhost`, and the device on the far end takes `maxhost` — exactly what
+`extranets.link_hosts` already defines.
 
 ### What the node does with it
 
@@ -119,15 +132,19 @@ UCI and announced over respondd as `nodeinfo.provisioning`.
 
 `contact`, `latitude` and `longitude` go into `gluon-node-info`.
 
-The mesh VPN is switched on exactly when the response provisions an address for
-`mesh_vpn`, and off when it does not — so a server that wants a node to tunnel
-answers for `mesh_vpn`, and one that does not, omits it.
+The loopback addresses go into `gluon-static-ip.loopback.ip4` / `.ip6`, which
+`ffgraz-static-ip` picks up on the next `gluon-reconfigure`.
 
-For each answered interface the address is written to
-`gluon-static-ip.<interface>.ip4` (or `.ip6` for `requested_type: 6`) and
-committed. `ffgraz-static-ip` picks it up from there on the next
-`gluon-reconfigure`, which the node runs — followed by `gluon-reload` — only if
-something actually changed.
+Each `networks.<name>` range becomes `network.<name>.ipaddr` / `.ip6addr` at the
+range's first address, which is what `extranets.routed4` and `.public6` need for
+it to be announced to the mesh.
+
+Each `links.<section>.linknet` becomes `gluon.<section>.linknet`, which
+`115-gluon-linknets` turns into the interface and the address on it. A section
+the response omits is left alone; an explicit `null` clears it.
+
+`gluon-reconfigure` — followed by `gluon-reload` — runs only if something
+actually changed.
 
 Errors are in-band: a rejected token or an unknown node is an HTTP 200 carrying
 `{"ok": false, "error": "..."}`, which the node reports and stops on. An HTTP
