@@ -19,3 +19,12 @@ PACKAGES_CM_BRANCH=funkfeuer
 PACKAGES_GLUON_REPO=https://github.com/ffgraz/gluon-packages.git
 PACKAGES_GLUON_BRANCH=funkfeuer
 PACKAGES_GLUON_COMMIT=d4f6eaf569b2fe08190226899916c1f873937d2f
+
+# openwrt-25.12 plus lua-openssl 0.11.1. gluon pins openwrt/packages, whose
+# 25.12 branch still carries 0.10.0 - that build has no one-shot DigestVerify,
+# so it answers "invalid digest" for Ed25519 and ffgraz-config-mode-remote
+# cannot check a capability. The bump is on packages master only, so it is
+# cherry-picked onto the pinned commit rather than dragging master in.
+PACKAGES_PACKAGES_REPO=https://github.com/ffgraz/packages-1.git
+PACKAGES_PACKAGES_BRANCH=ffgraz-25.12
+PACKAGES_PACKAGES_COMMIT=8e96be088f0476cc728473a25700efd873170f83
