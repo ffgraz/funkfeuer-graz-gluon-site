@@ -12,8 +12,8 @@ configured with.
 
 A device has exactly one, and the server hands out another only by rotating,
 which revokes the old one at once: a node still carrying the old token is
-refused until the new one is put on it. The uci file it lives in is a conffile,
-so a sysupgrade leaves it alone.
+refused until the new one is put on it. A sysupgrade keeps every uci file, so
+an upgrade does not cost a node its token.
 
 Requests are made with `uclient-fetch`, so the node needs no HTTP client library.
 
