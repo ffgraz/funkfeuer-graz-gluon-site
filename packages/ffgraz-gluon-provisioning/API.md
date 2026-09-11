@@ -10,6 +10,11 @@ config mode wizard or via `gluon-provisioning enable <token>`. The token
 identifies the node — it replaces the node id and node name a node used to be
 configured with.
 
+A device has exactly one, and the server hands out another only by rotating,
+which revokes the old one at once: a node still carrying the old token is
+refused until the new one is put on it. The uci file it lives in is a conffile,
+so a sysupgrade leaves it alone.
+
 Requests are made with `uclient-fetch`, so the node needs no HTTP client library.
 
 Setting `GLUON_PROVISIONING_API` in the environment replaces the site's mirror
