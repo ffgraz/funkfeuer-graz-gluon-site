@@ -30,9 +30,11 @@ packages {
 	-- ddhcpd and dnsmasq both bind 0.0.0.0:67 and cannot coexist: whichever
 	-- starts first wins and the other crash loops. dnsmasq is START=19 and
 	-- ddhcpd START=90, so ddhcpd has been the one losing, and the node's own
-	-- networks need dnsmasq. Out until that is sorted.
+	-- networks need dnsmasq. The client network is served centrally through
+	-- the dnsmasq that is there anyway instead.
 	-- 'ffgraz-ddhcpd-nextnode',
 	-- 'ffgraz-ddhcpd',
+	'ffgraz-dnsmasq-dhcp-relay',
 	'ffgraz-monitor-and-reboot',
 	'ffgraz-blink',
 	'ffda-gluon-usteer',
